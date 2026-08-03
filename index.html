@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Slate</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"><style>
+:root{
+  --field:#07131C; --panel:#0F2130; --panel-2:#16303F;
+  --line:#204A5E;
+  --chalk:#EAF0F6; --muted:#8199B0; --accent:#5BC8E8;
+  --gain:#4FB477; --loss:#E06C6C;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--field);color:var(--chalk);
+  font-family:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:14px;line-height:1.55;-webkit-text-size-adjust:100%;
+  font-variant-numeric:tabular-nums}
+a{color:var(--accent);text-decoration:none}
+header{border-bottom:1px solid var(--line);background:var(--panel);
+  position:sticky;top:0;z-index:5}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.brand{display:flex;align-items:baseline;gap:12px;padding:14px 0 0}
+.brand h1{font-weight:700;font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;margin:0}
+.brand .stamp{font-size:11px;color:var(--muted);letter-spacing:.08em}
+nav{display:flex;gap:4px;padding:10px 0 0;overflow-x:auto}
+nav a{padding:8px 14px;border-radius:6px 6px 0 0;font-size:13px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;white-space:nowrap}
+nav a.on{background:var(--field);color:var(--chalk);
+  box-shadow:inset 0 2px 0 var(--accent)}
+nav a:focus-visible,th[data-t]:focus-visible{outline:2px solid var(--accent);
+  outline-offset:2px}
+main{padding:22px 0 60px}
+.note{color:var(--muted);font-size:13px;margin:0 0 18px;max-width:70ch}
+h2{font-weight:700;font-size:16px;letter-spacing:.12em;
+  text-transform:uppercase;margin:26px 0 10px;color:var(--chalk)}
+h2:first-of-type{margin-top:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:500;font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);
+  white-space:nowrap;background:var(--field)}
+td{padding:9px 10px;border-bottom:1px solid rgba(36,64,92,.5)}
+tbody tr:hover{background:var(--panel)}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.team{font-weight:500}
+.fav{color:var(--accent)}
+.date{color:var(--muted);font-size:13px}
+.pos{color:var(--gain)} .neg{color:var(--loss)}
+.pill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;background:var(--panel-2);
+  color:var(--muted)}
+/* scoreboard: the signature element */
+.board{display:none}
+.game{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  margin:0 0 10px;overflow:hidden}
+.game .kick{padding:7px 12px;background:var(--panel-2);font-size:11px;
+  letter-spacing:.08em;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:center}
+.game .side{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 12px}
+.game .side + .side{border-top:1px solid rgba(36,64,92,.6)}
+.game .side .nm{font-weight:500;font-size:14px}
+.game .side .sc{font-weight:700;font-size:26px;line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.game .side.win .sc{color:var(--accent)}
+.game .foot{padding:7px 12px;border-top:1px solid rgba(36,64,92,.6);
+  font-size:11px;color:var(--muted);display:flex;gap:14px;
+  letter-spacing:.06em;flex-wrap:wrap}
+@media(max-width:760px){
+  .tbl{display:none}
+  .board{display:block}
+  .wrap{padding:0 12px}
+}
+th[data-t]{cursor:pointer;user-select:none;position:relative}
+th[data-t]:hover{color:var(--chalk)}
+th[data-t]::after{content:"";opacity:.35;margin-left:6px;font-size:10px}
+th[data-t][data-dir="asc"]::after{content:"\2191";opacity:1;color:var(--accent)}
+th[data-t][data-dir="desc"]::after{content:"\2193";opacity:1;color:var(--accent)}
+th[data-t]:not([data-dir])::after{content:"\2195"}
+.tools{display:flex;gap:8px;align-items:center;margin:0 0 14px}
+.tools input{flex:1;background:var(--panel);color:var(--chalk);
+  border:1px solid var(--line);border-radius:6px;padding:9px 11px;
+  font-family:inherit;font-size:13px}
+.tools input::placeholder{color:var(--muted)}
+.tools .count{font-size:11px;color:var(--muted);letter-spacing:.08em;
+  white-space:nowrap}
+tr.row{cursor:pointer}
+tr.row td:first-child{position:relative;padding-left:22px}
+tr.row td:first-child::before{content:"\203A";position:absolute;left:8px;
+  color:var(--muted);transition:transform .12s}
+tr.row.open td:first-child::before{transform:rotate(90deg);color:var(--accent)}
+tr.det{display:none}
+tr.det.show{display:table-row}
+tr.det > td{background:var(--panel);padding:14px 16px}
+.mx{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.mx h4{margin:0 0 8px;font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--accent);font-weight:500}
+.mx table{font-size:12px}
+.mx td{padding:3px 6px;border:0}
+.mx .k{color:var(--muted)}
+.mx .v{text-align:right;font-variant-numeric:tabular-nums}
+.game .det2{display:none;padding:12px;border-top:1px solid var(--line);
+  background:var(--panel-2)}
+.game.open .det2{display:block}
+.game .kick{cursor:pointer}
+@media(max-width:760px){.mx{grid-template-columns:1fr}}
+.sorter{display:none;margin:0 0 12px;gap:8px;align-items:center}
+.sorter label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted)}
+.sorter select{background:var(--panel);color:var(--chalk);
+  border:1px solid var(--line);border-radius:6px;padding:7px 9px;
+  font-family:inherit;font-size:13px;flex:1}
+.sorter button{background:var(--panel);color:var(--chalk);
+  border:1px solid var(--line);border-radius:6px;padding:7px 11px;
+  font-family:inherit;font-size:13px;cursor:pointer}
+@media(max-width:760px){.sorter{display:flex}}
+.prose{max-width:78ch}
+.prose h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;
+  margin:28px 0 8px;color:var(--accent);font-weight:500}
+.prose p{margin:0 0 12px;color:#C4D2DF}
+.prose code{background:var(--panel);padding:1px 5px;border-radius:4px;
+  font-size:12px;color:var(--chalk)}
+.prose ul{margin:0 0 14px;padding-left:18px;color:#C4D2DF}
+.prose li{margin:0 0 6px}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 20px}
+.toc a{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:5px 10px;font-size:12px;color:var(--chalk)}
+.toc a:hover{border-color:var(--accent)}
+.hit{color:var(--gain)} .miss{color:var(--loss)}
+.big{display:flex;gap:22px;flex-wrap:wrap;margin:0 0 20px}
+.big div{background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:12px 16px;min-width:120px}
+.big .n{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.big .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-top:2px}
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:12px;
+  padding:16px 0 40px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head>
+<body><header><div class="wrap">
+<div class="brand"><h1>Projections</h1>
+<span class="stamp">NHL &middot; L20 window &middot; built Aug 02, 2026 18:58</span></div>
+<nav><a href="index.html" class="on">Slate</a><a href="players.html" class="">Players</a><a href="ev.html" class="">Market</a><a href="tracking.html" class="">Tracking</a><a href="about.html" class="">About</a></nav></div></header>
+<main><div class="wrap"><p class='note'>5 games. Team goals are the sum of every projected skater on that team, so they exclude empty-net and shootout scoring and will read low against real finals. The gap between the two numbers carries more signal than either one alone. Tap a game for the matchup detail.</p><div class='tools'><input id='q' type='search' placeholder='Filter by team…' autocomplete='off'><span class='count' id='qn'></span></div><div class='sorter'><label for='bsort'>Sort</label><select id='bsort'><option value='date' data-t='num'>Date</option><option value='by' data-t='num'>Gap</option><option value='total' data-t='num'>Total</option><option value='fav' data-t='txt'>Favourite</option><option value='home' data-t='txt'>Home team</option><option value='away' data-t='txt'>Away team</option></select><button id='bdir' type='button' aria-label='Reverse order'>&uarr;</button></div><div class='tbl'><table><thead><tr><th data-t='num'>Date</th><th data-t='txt'>Away</th><th class='num' data-t='num'>G</th><th data-t='txt'>Home</th><th class='num' data-t='num'>G</th><th class='num' data-t='num'>Total</th><th class='num' data-t='num'>SOG</th><th data-t='txt'>Favourite</th><th class='num' data-t='num'>Gap</th></tr></thead><tbody><tr class='row' data-g='0'><td class='date' data-v='2026-09-28'>Mon Sep 28</td><td class='team'>NYR</td><td class='num'>1.97</td><td class='team'>BOS</td><td class='num'>2.44</td><td class='num'>4.42</td><td class='num'>45</td><td class='team fav'>BOS</td><td class='num'>0.47</td></tr><tr class='det' data-g='0'><td colspan='9'><div class='mx'><h4>NYR</h4><table><tr><td class='k'>Proj G</td><td class='v'>1.97</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>20.3</td></tr><tr><td class='k'>Proj A</td><td class='v'>8.70</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>12.0</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>7.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>59.8</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>12.50</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.907</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.05</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.96</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Jeremy Swayman</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Alexis Lafreniere <span class='pill'>L2/PP1</span></td><td class='v'>1.38 P &middot; 2.4 SOG</td></tr><tr><td class='k'>Mika Zibanejad <span class='pill'>L1/PP1</span></td><td class='v'>1.16 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Gabriel Perreault <span class='pill'>L1/PP2</span></td><td class='v'>1.09 P &middot; 1.3 SOG</td></tr><tr><td class='k'>J T Miller <span class='pill'>L2/PP1</span></td><td class='v'>1.06 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Will Cuylle <span class='pill'>L3/PP2</span></td><td class='v'>0.97 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Adam Fox <span class='pill'>L1/PP1</span></td><td class='v'>0.67 P &middot; 1.4 SOG</td></tr></table><h4>BOS</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.44</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>25.0</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.52</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.9</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>9.2</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>57.3</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>10.20</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.911</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.01</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.97</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Igor Shesterkin</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>David Pastrnak <span class='pill'>L1/PP1</span></td><td class='v'>1.45 P &middot; 3.0 SOG</td></tr><tr><td class='k'>Jj Peterka <span class='pill'>L1/PP2</span></td><td class='v'>1.34 P &middot; 2.7 SOG</td></tr><tr><td class='k'>Pavel Zacha <span class='pill'>L1/PP1</span></td><td class='v'>1.11 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Morgan Geekie <span class='pill'>L2/PP1</span></td><td class='v'>1.07 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Elias Lindholm <span class='pill'>L2/PP1</span></td><td class='v'>1.07 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Fraser Minten <span class='pill'>L3/PP2</span></td><td class='v'>0.89 P &middot; 1.5 SOG</td></tr></table></div></td></tr><tr class='row' data-g='1'><td class='date' data-v='2026-09-28'>Mon Sep 28</td><td class='team'>FLA</td><td class='num'>2.50</td><td class='team'>CAR</td><td class='num'>2.93</td><td class='num'>5.43</td><td class='num'>46</td><td class='team fav'>CAR</td><td class='num'>0.43</td></tr><tr class='det' data-g='1'><td colspan='9'><div class='mx'><h4>FLA</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.50</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>19.7</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.71</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>8.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>10.2</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>46.7</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>10.86</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.894</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.82</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.99</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Brandon Bussi</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Matthew Tkachuk <span class='pill'>L2/PP1</span></td><td class='v'>1.60 P &middot; 2.1 SOG</td></tr><tr><td class='k'>Brady Tkachuk <span class='pill'>L1/PP1</span></td><td class='v'>1.60 P &middot; 2.1 SOG</td></tr><tr><td class='k'>Sam Bennett <span class='pill'>L2/PP2</span></td><td class='v'>1.37 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Carter Verhaeghe <span class='pill'>L2/PP2</span></td><td class='v'>1.27 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Sam Reinhart <span class='pill'>L1/PP1</span></td><td class='v'>1.09 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Eetu Luostarinen <span class='pill'>L3</span></td><td class='v'>0.82 P &middot; 0.8 SOG</td></tr></table><h4>CAR</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.93</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>26.6</td></tr><tr><td class='k'>Proj A</td><td class='v'>12.43</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.2</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>6.4</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>54.2</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>11.64</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.877</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.95</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.05</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Sergei Bobrovsky</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Jackson Blake <span class='pill'>L2/PP2</span></td><td class='v'>1.62 P &middot; 1.9 SOG</td></tr><tr><td class='k'>Sebastian Aho <span class='pill'>L1/PP1</span></td><td class='v'>1.36 P &middot; 2.6 SOG</td></tr><tr><td class='k'>Logan Stankoven <span class='pill'>L2/PP2</span></td><td class='v'>1.31 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Andrei Svechnikov <span class='pill'>L1/PP1</span></td><td class='v'>1.21 P &middot; 2.0 SOG</td></tr><tr><td class='k'>Taylor Hall <span class='pill'>L2/PP2</span></td><td class='v'>1.14 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Jordan Martinook <span class='pill'>L3</span></td><td class='v'>1.06 P &middot; 1.4 SOG</td></tr></table></div></td></tr><tr class='row' data-g='2'><td class='date' data-v='2026-09-28'>Mon Sep 28</td><td class='team'>VAN</td><td class='num'>2.29</td><td class='team'>EDM</td><td class='num'>3.04</td><td class='num'>5.34</td><td class='num'>51</td><td class='team fav'>EDM</td><td class='num'>0.75</td></tr><tr class='det' data-g='2'><td colspan='9'><div class='mx'><h4>VAN</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.29</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>22.4</td></tr><tr><td class='k'>Proj A</td><td class='v'>9.60</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>8.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>6.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>55.6</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>11.06</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.899</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.98</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.00</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Connor Ingram</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Jake Debrusk <span class='pill'>L1/PP1</span></td><td class='v'>1.33 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Filip Chytil <span class='pill'>L3/PP2</span></td><td class='v'>1.10 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Drew O Connor <span class='pill'>L3</span></td><td class='v'>0.98 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Brock Boeser <span class='pill'>L2/PP1</span></td><td class='v'>0.97 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Linus Karlsson <span class='pill'>L1/PP2</span></td><td class='v'>0.93 P &middot; 1.3 SOG</td></tr><tr><td class='k'>Elias Pettersson <span class='pill'>L1/PP1</span></td><td class='v'>0.91 P &middot; 1.8 SOG</td></tr></table><h4>EDM</h4><table><tr><td class='k'>Proj G</td><td class='v'>3.04</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>28.4</td></tr><tr><td class='k'>Proj A</td><td class='v'>11.55</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>7.2</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>60.2</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>13.09</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.875</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.06</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.02</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Kevin Lankinen</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Connor Mcdavid <span class='pill'>L1/PP1</span></td><td class='v'>1.88 P &middot; 3.4 SOG</td></tr><tr><td class='k'>Zach Hyman <span class='pill'>L1/PP1</span></td><td class='v'>1.54 P &middot; 2.6 SOG</td></tr><tr><td class='k'>Leon Draisaitl <span class='pill'>L2/PP1</span></td><td class='v'>1.51 P &middot; 3.3 SOG</td></tr><tr><td class='k'>Connor Murphy <span class='pill'>L2</span></td><td class='v'>1.35 P &middot; 2.3 SOG</td></tr><tr><td class='k'>Matthew Savoie <span class='pill'>L2/PP2</span></td><td class='v'>1.19 P &middot; 2.0 SOG</td></tr><tr><td class='k'>Ryan Nugent Hopkins <span class='pill'>L3/PP1</span></td><td class='v'>1.04 P &middot; 1.9 SOG</td></tr></table></div></td></tr><tr class='row' data-g='3'><td class='date' data-v='2026-09-28'>Mon Sep 28</td><td class='team'>MTL</td><td class='num'>2.24</td><td class='team'>TOR</td><td class='num'>2.82</td><td class='num'>5.06</td><td class='num'>51</td><td class='team fav'>TOR</td><td class='num'>0.58</td></tr><tr class='det' data-g='3'><td colspan='9'><div class='mx'><h4>MTL</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.24</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>23.7</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.58</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>16.5</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>10.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>63.7</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>12.30</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.898</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.12</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.97</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Joseph Woll</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Cole Caufield <span class='pill'>L1/PP1</span></td><td class='v'>1.83 P &middot; 3.9 SOG</td></tr><tr><td class='k'>Juraj Slafkovsky <span class='pill'>L1/PP1</span></td><td class='v'>1.35 P &middot; 2.5 SOG</td></tr><tr><td class='k'>Nick Suzuki <span class='pill'>L1/PP1</span></td><td class='v'>1.09 P &middot; 2.1 SOG</td></tr><tr><td class='k'>Ivan Demidov <span class='pill'>L2/PP1</span></td><td class='v'>1.06 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Zachary Bolduc <span class='pill'>L4/PP2</span></td><td class='v'>0.93 P &middot; 1.0 SOG</td></tr><tr><td class='k'>Alex Newhook <span class='pill'>L2/PP2</span></td><td class='v'>0.89 P &middot; 1.4 SOG</td></tr></table><h4>TOR</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.82</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>27.5</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.48</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>14.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>14.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>57.8</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>12.21</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.901</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.02</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.99</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Jakub Dobes</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Auston Matthews <span class='pill'>L1/PP1</span></td><td class='v'>2.02 P &middot; 3.8 SOG</td></tr><tr><td class='k'>Gavin Mckenna <span class='pill'>L2/PP2</span></td><td class='v'>1.78 P &middot; 4.2 SOG</td></tr><tr><td class='k'>John Tavares <span class='pill'>L2/PP1</span></td><td class='v'>1.54 P &middot; 2.0 SOG</td></tr><tr><td class='k'>William Nylander <span class='pill'>L2/PP1</span></td><td class='v'>1.23 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Matthew Knies <span class='pill'>L1/PP1</span></td><td class='v'>0.77 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Easton Cowan <span class='pill'>L3/PP2</span></td><td class='v'>0.72 P &middot; 1.3 SOG</td></tr></table></div></td></tr><tr class='row' data-g='4'><td class='date' data-v='2026-09-28'>Mon Sep 28</td><td class='team'>CHI</td><td class='num'>2.46</td><td class='team'>VGK</td><td class='num'>2.37</td><td class='num'>4.83</td><td class='num'>51</td><td class='team fav'>CHI</td><td class='num'>0.09</td></tr><tr class='det' data-g='4'><td colspan='9'><div class='mx'><h4>CHI</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.46</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>23.3</td></tr><tr><td class='k'>Proj A</td><td class='v'>11.40</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>6.0</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>53.0</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>9.51</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.893</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.93</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.02</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Akira Schmid</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Connor Bedard <span class='pill'>L1/PP1</span></td><td class='v'>1.44 P &middot; 2.9 SOG</td></tr><tr><td class='k'>Anton Frondell <span class='pill'>L2/PP1</span></td><td class='v'>1.36 P &middot; 2.5 SOG</td></tr><tr><td class='k'>Bowen Byram <span class='pill'>L1/PP2</span></td><td class='v'>1.32 P &middot; 2.7 SOG</td></tr><tr><td class='k'>Frank Nazar <span class='pill'>L1/PP2</span></td><td class='v'>1.08 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Roman Kantserov <span class='pill'>L2/PP1</span></td><td class='v'>1.05 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Tyler Bertuzzi <span class='pill'>L2/PP2</span></td><td class='v'>0.91 P &middot; 1.5 SOG</td></tr></table><h4>VGK</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.37</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>27.7</td></tr><tr><td class='k'>Proj A</td><td class='v'>12.61</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>11.6</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>7.8</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>59.8</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>13.66</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.902</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.05</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.95</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Spencer Knight</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Jack Eichel <span class='pill'>L1/PP1</span></td><td class='v'>1.65 P &middot; 3.3 SOG</td></tr><tr><td class='k'>Mitch Marner <span class='pill'>L2/PP1</span></td><td class='v'>1.37 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Mark Stone <span class='pill'>L1/PP1</span></td><td class='v'>1.23 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Jonas Rondbjerg <span class='pill'>L4</span></td><td class='v'>1.14 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Tomas Hertl <span class='pill'>L3/PP1</span></td><td class='v'>1.12 P &middot; 1.9 SOG</td></tr><tr><td class='k'>Ivan Barbashev <span class='pill'>L1/PP2</span></td><td class='v'>1.05 P &middot; 1.8 SOG</td></tr></table></div></td></tr></tbody></table></div><div class='board'><div class='game' data-date='2026-09-28' data-away='NYR' data-home='BOS' data-total='4.42' data-by='0.47' data-fav='BOS'><div class='kick'><span>Mon Sep 28</span><span class='pill'>Igor Shesterkin</span></div><div class='side'><span class='nm'>NYR</span><span class='sc'>2.0</span></div><div class='side win'><span class='nm'>BOS</span><span class='sc'>2.4</span></div><div class='foot'><span>BOS by 0.47</span><span>total 4.42</span></div><div class='det2'><div class='mx'><h4>NYR</h4><table><tr><td class='k'>Proj G</td><td class='v'>1.97</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>20.3</td></tr><tr><td class='k'>Proj A</td><td class='v'>8.70</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>12.0</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>7.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>59.8</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>12.50</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.907</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.05</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.96</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Jeremy Swayman</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Alexis Lafreniere <span class='pill'>L2/PP1</span></td><td class='v'>1.38 P &middot; 2.4 SOG</td></tr><tr><td class='k'>Mika Zibanejad <span class='pill'>L1/PP1</span></td><td class='v'>1.16 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Gabriel Perreault <span class='pill'>L1/PP2</span></td><td class='v'>1.09 P &middot; 1.3 SOG</td></tr><tr><td class='k'>J T Miller <span class='pill'>L2/PP1</span></td><td class='v'>1.06 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Will Cuylle <span class='pill'>L3/PP2</span></td><td class='v'>0.97 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Adam Fox <span class='pill'>L1/PP1</span></td><td class='v'>0.67 P &middot; 1.4 SOG</td></tr></table><h4>BOS</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.44</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>25.0</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.52</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.9</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>9.2</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>57.3</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>10.20</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.911</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.01</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.97</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Igor Shesterkin</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>David Pastrnak <span class='pill'>L1/PP1</span></td><td class='v'>1.45 P &middot; 3.0 SOG</td></tr><tr><td class='k'>Jj Peterka <span class='pill'>L1/PP2</span></td><td class='v'>1.34 P &middot; 2.7 SOG</td></tr><tr><td class='k'>Pavel Zacha <span class='pill'>L1/PP1</span></td><td class='v'>1.11 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Morgan Geekie <span class='pill'>L2/PP1</span></td><td class='v'>1.07 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Elias Lindholm <span class='pill'>L2/PP1</span></td><td class='v'>1.07 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Fraser Minten <span class='pill'>L3/PP2</span></td><td class='v'>0.89 P &middot; 1.5 SOG</td></tr></table></div></div></div><div class='game' data-date='2026-09-28' data-away='FLA' data-home='CAR' data-total='5.43' data-by='0.43' data-fav='CAR'><div class='kick'><span>Mon Sep 28</span><span class='pill'>Sergei Bobrovsky</span></div><div class='side'><span class='nm'>FLA</span><span class='sc'>2.5</span></div><div class='side win'><span class='nm'>CAR</span><span class='sc'>2.9</span></div><div class='foot'><span>CAR by 0.43</span><span>total 5.43</span></div><div class='det2'><div class='mx'><h4>FLA</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.50</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>19.7</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.71</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>8.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>10.2</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>46.7</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>10.86</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.894</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.82</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.99</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Brandon Bussi</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Matthew Tkachuk <span class='pill'>L2/PP1</span></td><td class='v'>1.60 P &middot; 2.1 SOG</td></tr><tr><td class='k'>Brady Tkachuk <span class='pill'>L1/PP1</span></td><td class='v'>1.60 P &middot; 2.1 SOG</td></tr><tr><td class='k'>Sam Bennett <span class='pill'>L2/PP2</span></td><td class='v'>1.37 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Carter Verhaeghe <span class='pill'>L2/PP2</span></td><td class='v'>1.27 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Sam Reinhart <span class='pill'>L1/PP1</span></td><td class='v'>1.09 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Eetu Luostarinen <span class='pill'>L3</span></td><td class='v'>0.82 P &middot; 0.8 SOG</td></tr></table><h4>CAR</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.93</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>26.6</td></tr><tr><td class='k'>Proj A</td><td class='v'>12.43</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.2</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>6.4</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>54.2</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>11.64</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.877</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.95</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.05</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Sergei Bobrovsky</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Jackson Blake <span class='pill'>L2/PP2</span></td><td class='v'>1.62 P &middot; 1.9 SOG</td></tr><tr><td class='k'>Sebastian Aho <span class='pill'>L1/PP1</span></td><td class='v'>1.36 P &middot; 2.6 SOG</td></tr><tr><td class='k'>Logan Stankoven <span class='pill'>L2/PP2</span></td><td class='v'>1.31 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Andrei Svechnikov <span class='pill'>L1/PP1</span></td><td class='v'>1.21 P &middot; 2.0 SOG</td></tr><tr><td class='k'>Taylor Hall <span class='pill'>L2/PP2</span></td><td class='v'>1.14 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Jordan Martinook <span class='pill'>L3</span></td><td class='v'>1.06 P &middot; 1.4 SOG</td></tr></table></div></div></div><div class='game' data-date='2026-09-28' data-away='VAN' data-home='EDM' data-total='5.34' data-by='0.75' data-fav='EDM'><div class='kick'><span>Mon Sep 28</span><span class='pill'>Kevin Lankinen</span></div><div class='side'><span class='nm'>VAN</span><span class='sc'>2.3</span></div><div class='side win'><span class='nm'>EDM</span><span class='sc'>3.0</span></div><div class='foot'><span>EDM by 0.75</span><span>total 5.34</span></div><div class='det2'><div class='mx'><h4>VAN</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.29</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>22.4</td></tr><tr><td class='k'>Proj A</td><td class='v'>9.60</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>8.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>6.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>55.6</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>11.06</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.899</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.98</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.00</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Connor Ingram</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Jake Debrusk <span class='pill'>L1/PP1</span></td><td class='v'>1.33 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Filip Chytil <span class='pill'>L3/PP2</span></td><td class='v'>1.10 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Drew O Connor <span class='pill'>L3</span></td><td class='v'>0.98 P &middot; 1.7 SOG</td></tr><tr><td class='k'>Brock Boeser <span class='pill'>L2/PP1</span></td><td class='v'>0.97 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Linus Karlsson <span class='pill'>L1/PP2</span></td><td class='v'>0.93 P &middot; 1.3 SOG</td></tr><tr><td class='k'>Elias Pettersson <span class='pill'>L1/PP1</span></td><td class='v'>0.91 P &middot; 1.8 SOG</td></tr></table><h4>EDM</h4><table><tr><td class='k'>Proj G</td><td class='v'>3.04</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>28.4</td></tr><tr><td class='k'>Proj A</td><td class='v'>11.55</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>7.2</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>60.2</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>13.09</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.875</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.06</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.02</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Kevin Lankinen</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Connor Mcdavid <span class='pill'>L1/PP1</span></td><td class='v'>1.88 P &middot; 3.4 SOG</td></tr><tr><td class='k'>Zach Hyman <span class='pill'>L1/PP1</span></td><td class='v'>1.54 P &middot; 2.6 SOG</td></tr><tr><td class='k'>Leon Draisaitl <span class='pill'>L2/PP1</span></td><td class='v'>1.51 P &middot; 3.3 SOG</td></tr><tr><td class='k'>Connor Murphy <span class='pill'>L2</span></td><td class='v'>1.35 P &middot; 2.3 SOG</td></tr><tr><td class='k'>Matthew Savoie <span class='pill'>L2/PP2</span></td><td class='v'>1.19 P &middot; 2.0 SOG</td></tr><tr><td class='k'>Ryan Nugent Hopkins <span class='pill'>L3/PP1</span></td><td class='v'>1.04 P &middot; 1.9 SOG</td></tr></table></div></div></div><div class='game' data-date='2026-09-28' data-away='MTL' data-home='TOR' data-total='5.06' data-by='0.58' data-fav='TOR'><div class='kick'><span>Mon Sep 28</span><span class='pill'>Jakub Dobes</span></div><div class='side'><span class='nm'>MTL</span><span class='sc'>2.2</span></div><div class='side win'><span class='nm'>TOR</span><span class='sc'>2.8</span></div><div class='foot'><span>TOR by 0.58</span><span>total 5.06</span></div><div class='det2'><div class='mx'><h4>MTL</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.24</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>23.7</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.58</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>16.5</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>10.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>63.7</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>12.30</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.898</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.12</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.97</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Joseph Woll</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Cole Caufield <span class='pill'>L1/PP1</span></td><td class='v'>1.83 P &middot; 3.9 SOG</td></tr><tr><td class='k'>Juraj Slafkovsky <span class='pill'>L1/PP1</span></td><td class='v'>1.35 P &middot; 2.5 SOG</td></tr><tr><td class='k'>Nick Suzuki <span class='pill'>L1/PP1</span></td><td class='v'>1.09 P &middot; 2.1 SOG</td></tr><tr><td class='k'>Ivan Demidov <span class='pill'>L2/PP1</span></td><td class='v'>1.06 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Zachary Bolduc <span class='pill'>L4/PP2</span></td><td class='v'>0.93 P &middot; 1.0 SOG</td></tr><tr><td class='k'>Alex Newhook <span class='pill'>L2/PP2</span></td><td class='v'>0.89 P &middot; 1.4 SOG</td></tr></table><h4>TOR</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.82</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>27.5</td></tr><tr><td class='k'>Proj A</td><td class='v'>10.48</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>14.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>14.7</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>57.8</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>12.21</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.901</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.02</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.99</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Jakub Dobes</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Auston Matthews <span class='pill'>L1/PP1</span></td><td class='v'>2.02 P &middot; 3.8 SOG</td></tr><tr><td class='k'>Gavin Mckenna <span class='pill'>L2/PP2</span></td><td class='v'>1.78 P &middot; 4.2 SOG</td></tr><tr><td class='k'>John Tavares <span class='pill'>L2/PP1</span></td><td class='v'>1.54 P &middot; 2.0 SOG</td></tr><tr><td class='k'>William Nylander <span class='pill'>L2/PP1</span></td><td class='v'>1.23 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Matthew Knies <span class='pill'>L1/PP1</span></td><td class='v'>0.77 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Easton Cowan <span class='pill'>L3/PP2</span></td><td class='v'>0.72 P &middot; 1.3 SOG</td></tr></table></div></div></div><div class='game' data-date='2026-09-28' data-away='CHI' data-home='VGK' data-total='4.83' data-by='0.09' data-fav='CHI'><div class='kick'><span>Mon Sep 28</span><span class='pill'>Spencer Knight</span></div><div class='side win'><span class='nm'>CHI</span><span class='sc'>2.5</span></div><div class='side'><span class='nm'>VGK</span><span class='sc'>2.4</span></div><div class='foot'><span>CHI by 0.09</span><span>total 4.83</span></div><div class='det2'><div class='mx'><h4>CHI</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.46</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>23.3</td></tr><tr><td class='k'>Proj A</td><td class='v'>11.40</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>10.8</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>6.0</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>53.0</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>9.51</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.893</td></tr><tr><td class='k'>Shot adj</td><td class='v'>0.93</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>1.02</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Akira Schmid</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Connor Bedard <span class='pill'>L1/PP1</span></td><td class='v'>1.44 P &middot; 2.9 SOG</td></tr><tr><td class='k'>Anton Frondell <span class='pill'>L2/PP1</span></td><td class='v'>1.36 P &middot; 2.5 SOG</td></tr><tr><td class='k'>Bowen Byram <span class='pill'>L1/PP2</span></td><td class='v'>1.32 P &middot; 2.7 SOG</td></tr><tr><td class='k'>Frank Nazar <span class='pill'>L1/PP2</span></td><td class='v'>1.08 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Roman Kantserov <span class='pill'>L2/PP1</span></td><td class='v'>1.05 P &middot; 1.5 SOG</td></tr><tr><td class='k'>Tyler Bertuzzi <span class='pill'>L2/PP2</span></td><td class='v'>0.91 P &middot; 1.5 SOG</td></tr></table><h4>VGK</h4><table><tr><td class='k'>Proj G</td><td class='v'>2.37</td></tr><tr><td class='k'>Proj SOG</td><td class='v'>27.7</td></tr><tr><td class='k'>Proj A</td><td class='v'>12.61</td></tr><tr><td class='k'>Proj BLK</td><td class='v'>11.6</td></tr><tr><td class='k'>Proj PIM</td><td class='v'>7.8</td></tr><tr><td class='k'>Opp CA/60</td><td class='v'>59.8</td></tr><tr><td class='k'>Opp HDCA/60</td><td class='v'>13.66</td></tr><tr><td class='k'>Opp SV%</td><td class='v'>0.902</td></tr><tr><td class='k'>Shot adj</td><td class='v'>1.05</td></tr><tr><td class='k'>Goalie adj</td><td class='v'>0.95</td></tr><tr><td class='k'>Opp goalie</td><td class='v'>Spencer Knight</td></tr><tr><td class='k' colspan='2' style='padding-top:8px'>Top projected</td></tr><tr><td class='k'>Jack Eichel <span class='pill'>L1/PP1</span></td><td class='v'>1.65 P &middot; 3.3 SOG</td></tr><tr><td class='k'>Mitch Marner <span class='pill'>L2/PP1</span></td><td class='v'>1.37 P &middot; 2.2 SOG</td></tr><tr><td class='k'>Mark Stone <span class='pill'>L1/PP1</span></td><td class='v'>1.23 P &middot; 1.8 SOG</td></tr><tr><td class='k'>Jonas Rondbjerg <span class='pill'>L4</span></td><td class='v'>1.14 P &middot; 1.6 SOG</td></tr><tr><td class='k'>Tomas Hertl <span class='pill'>L3/PP1</span></td><td class='v'>1.12 P &middot; 1.9 SOG</td></tr><tr><td class='k'>Ivan Barbashev <span class='pill'>L1/PP2</span></td><td class='v'>1.05 P &middot; 1.8 SOG</td></tr></table></div></div></div></div></div></main>
+<script>
+(function(){
+  var val=function(el,t){
+    var s=(el.getAttribute('data-v')!==null)?el.getAttribute('data-v'):el.textContent;
+    s=s.trim();
+    if(t==='num'){var n=parseFloat(s.replace(/[^0-9.+-]/g,''));return isNaN(n)?-Infinity:n;}
+    return s.toLowerCase();
+  };
+  document.querySelectorAll('table').forEach(function(tb){
+    var heads=tb.querySelectorAll('thead th');
+    heads.forEach(function(th,i){
+      if(!th.hasAttribute('data-t'))return;
+      th.setAttribute('tabindex','0');
+      var go=function(){
+        var t=th.getAttribute('data-t');
+        var dir=th.getAttribute('data-dir')==='asc'?'desc':'asc';
+        heads.forEach(function(h){h.removeAttribute('data-dir');});
+        th.setAttribute('data-dir',dir);
+        var body=tb.querySelector('tbody');
+        var all=Array.prototype.slice.call(body.querySelectorAll('tr'));
+        var rows=all.filter(function(r){return !r.classList.contains('det');});
+        var dets={};
+        all.forEach(function(r){
+          if(r.classList.contains('det'))dets[r.getAttribute('data-g')]=r;
+        });
+        rows.sort(function(a,b){
+          var x=val(a.cells[i],t),y=val(b.cells[i],t);
+          if(x<y)return dir==='asc'?-1:1;
+          if(x>y)return dir==='asc'?1:-1;
+          return 0;
+        });
+        rows.forEach(function(r){
+          body.appendChild(r);
+          var g=r.getAttribute('data-g');
+          if(g!==null&&dets[g])body.appendChild(dets[g]);
+        });
+      };
+      th.addEventListener('click',go);
+      th.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go();}
+      });
+    });
+  });
+  var tbl=document.querySelector('table'),
+      tb=tbl?tbl.querySelector('tbody'):null;
+  if(tb){
+    tb.addEventListener('click',function(ev){
+      var tr=ev.target.closest('tr.row');
+      if(!tr)return;
+      var g=tr.getAttribute('data-g');
+      var d=tb.querySelector("tr.det[data-g='"+g+"']");
+      if(!d)return;
+      var open=d.classList.toggle('show');
+      tr.classList.toggle('open',open);
+    });
+  }
+  var bd=document.querySelector('.board');
+  if(bd){
+    bd.addEventListener('click',function(ev){
+      var c=ev.target.closest('.game');
+      if(c&&c.querySelector('.det2'))c.classList.toggle('open');
+    });
+  }
+  var q=document.getElementById('q'),qn=document.getElementById('qn');
+  if(q){
+    var filter=function(){
+      var v=q.value.trim().toLowerCase(),shown=0,total=0;
+      if(tb){
+        tb.querySelectorAll('tr.row, tr:not(.det):not(.row)').forEach(function(tr){
+          total++;
+          var hit=!v||tr.textContent.toLowerCase().indexOf(v)>-1;
+          tr.style.display=hit?'':'none';
+          if(hit)shown++;
+          var g=tr.getAttribute('data-g');
+          if(g!==null){
+            var d=tb.querySelector("tr.det[data-g='"+g+"']");
+            if(d&&!hit){d.classList.remove('show');tr.classList.remove('open');}
+          }
+        });
+      }
+      if(bd){
+        bd.querySelectorAll('.game').forEach(function(c){
+          var hit=!v||c.textContent.toLowerCase().indexOf(v)>-1;
+          c.style.display=hit?'':'none';
+          if(!hit)c.classList.remove('open');
+        });
+      }
+      if(qn)qn.textContent=v?shown+' / '+total:'';
+    };
+    q.addEventListener('input',filter);
+    q.addEventListener('keydown',function(ev){
+      if(ev.key==='Escape'){q.value='';filter();}
+    });
+  }
+  var board=document.querySelector('.board'),sel=document.getElementById('bsort'),
+      btn=document.getElementById('bdir');
+  if(board&&sel){
+    var asc=true;
+    var apply=function(){
+      var k=sel.value,t=sel.options[sel.selectedIndex].getAttribute('data-t');
+      var cards=Array.prototype.slice.call(board.querySelectorAll('.game'));
+      cards.sort(function(a,b){
+        var x=a.getAttribute('data-'+k),y=b.getAttribute('data-'+k);
+        if(t==='num'){x=parseFloat(x);y=parseFloat(y);}
+        else{x=(x||'').toLowerCase();y=(y||'').toLowerCase();}
+        if(x<y)return asc?-1:1;
+        if(x>y)return asc?1:-1;
+        return 0;
+      });
+      cards.forEach(function(c){board.appendChild(c);});
+      btn.textContent=asc?'\u2191':'\u2193';
+    };
+    sel.addEventListener('change',apply);
+    btn.addEventListener('click',function(){asc=!asc;apply();});
+  }
+})();
+</script>
+<footer><div class="wrap">Model output, not advice. A single skater's
+game is mostly noise &mdash; these are expected values over many games,
+not forecasts of tonight.</div></footer>
+</body></html>

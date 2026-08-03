@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>About</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet"><style>
+:root{
+  --field:#07131C; --panel:#0F2130; --panel-2:#16303F;
+  --line:#204A5E;
+  --chalk:#EAF0F6; --muted:#8199B0; --accent:#5BC8E8;
+  --gain:#4FB477; --loss:#E06C6C;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--field);color:var(--chalk);
+  font-family:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:14px;line-height:1.55;-webkit-text-size-adjust:100%;
+  font-variant-numeric:tabular-nums}
+a{color:var(--accent);text-decoration:none}
+header{border-bottom:1px solid var(--line);background:var(--panel);
+  position:sticky;top:0;z-index:5}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.brand{display:flex;align-items:baseline;gap:12px;padding:14px 0 0}
+.brand h1{font-weight:700;font-size:22px;letter-spacing:.14em;
+  text-transform:uppercase;margin:0}
+.brand .stamp{font-size:11px;color:var(--muted);letter-spacing:.08em}
+nav{display:flex;gap:4px;padding:10px 0 0;overflow-x:auto}
+nav a{padding:8px 14px;border-radius:6px 6px 0 0;font-size:13px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:500;white-space:nowrap}
+nav a.on{background:var(--field);color:var(--chalk);
+  box-shadow:inset 0 2px 0 var(--accent)}
+nav a:focus-visible,th[data-t]:focus-visible{outline:2px solid var(--accent);
+  outline-offset:2px}
+main{padding:22px 0 60px}
+.note{color:var(--muted);font-size:13px;margin:0 0 18px;max-width:70ch}
+h2{font-weight:700;font-size:16px;letter-spacing:.12em;
+  text-transform:uppercase;margin:26px 0 10px;color:var(--chalk)}
+h2:first-of-type{margin-top:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{font-weight:500;font-size:11px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
+  text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);
+  white-space:nowrap;background:var(--field)}
+td{padding:9px 10px;border-bottom:1px solid rgba(36,64,92,.5)}
+tbody tr:hover{background:var(--panel)}
+.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.team{font-weight:500}
+.fav{color:var(--accent)}
+.date{color:var(--muted);font-size:13px}
+.pos{color:var(--gain)} .neg{color:var(--loss)}
+.pill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;background:var(--panel-2);
+  color:var(--muted)}
+/* scoreboard: the signature element */
+.board{display:none}
+.game{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  margin:0 0 10px;overflow:hidden}
+.game .kick{padding:7px 12px;background:var(--panel-2);font-size:11px;
+  letter-spacing:.08em;color:var(--muted);
+  display:flex;justify-content:space-between;align-items:center}
+.game .side{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 12px}
+.game .side + .side{border-top:1px solid rgba(36,64,92,.6)}
+.game .side .nm{font-weight:500;font-size:14px}
+.game .side .sc{font-weight:700;font-size:26px;line-height:1;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.game .side.win .sc{color:var(--accent)}
+.game .foot{padding:7px 12px;border-top:1px solid rgba(36,64,92,.6);
+  font-size:11px;color:var(--muted);display:flex;gap:14px;
+  letter-spacing:.06em;flex-wrap:wrap}
+@media(max-width:760px){
+  .tbl{display:none}
+  .board{display:block}
+  .wrap{padding:0 12px}
+}
+th[data-t]{cursor:pointer;user-select:none;position:relative}
+th[data-t]:hover{color:var(--chalk)}
+th[data-t]::after{content:"";opacity:.35;margin-left:6px;font-size:10px}
+th[data-t][data-dir="asc"]::after{content:"\2191";opacity:1;color:var(--accent)}
+th[data-t][data-dir="desc"]::after{content:"\2193";opacity:1;color:var(--accent)}
+th[data-t]:not([data-dir])::after{content:"\2195"}
+.tools{display:flex;gap:8px;align-items:center;margin:0 0 14px}
+.tools input{flex:1;background:var(--panel);color:var(--chalk);
+  border:1px solid var(--line);border-radius:6px;padding:9px 11px;
+  font-family:inherit;font-size:13px}
+.tools input::placeholder{color:var(--muted)}
+.tools .count{font-size:11px;color:var(--muted);letter-spacing:.08em;
+  white-space:nowrap}
+tr.row{cursor:pointer}
+tr.row td:first-child{position:relative;padding-left:22px}
+tr.row td:first-child::before{content:"\203A";position:absolute;left:8px;
+  color:var(--muted);transition:transform .12s}
+tr.row.open td:first-child::before{transform:rotate(90deg);color:var(--accent)}
+tr.det{display:none}
+tr.det.show{display:table-row}
+tr.det > td{background:var(--panel);padding:14px 16px}
+.mx{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.mx h4{margin:0 0 8px;font-size:12px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--accent);font-weight:500}
+.mx table{font-size:12px}
+.mx td{padding:3px 6px;border:0}
+.mx .k{color:var(--muted)}
+.mx .v{text-align:right;font-variant-numeric:tabular-nums}
+.game .det2{display:none;padding:12px;border-top:1px solid var(--line);
+  background:var(--panel-2)}
+.game.open .det2{display:block}
+.game .kick{cursor:pointer}
+@media(max-width:760px){.mx{grid-template-columns:1fr}}
+.sorter{display:none;margin:0 0 12px;gap:8px;align-items:center}
+.sorter label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted)}
+.sorter select{background:var(--panel);color:var(--chalk);
+  border:1px solid var(--line);border-radius:6px;padding:7px 9px;
+  font-family:inherit;font-size:13px;flex:1}
+.sorter button{background:var(--panel);color:var(--chalk);
+  border:1px solid var(--line);border-radius:6px;padding:7px 11px;
+  font-family:inherit;font-size:13px;cursor:pointer}
+@media(max-width:760px){.sorter{display:flex}}
+.prose{max-width:78ch}
+.prose h3{font-size:14px;letter-spacing:.1em;text-transform:uppercase;
+  margin:28px 0 8px;color:var(--accent);font-weight:500}
+.prose p{margin:0 0 12px;color:#C4D2DF}
+.prose code{background:var(--panel);padding:1px 5px;border-radius:4px;
+  font-size:12px;color:var(--chalk)}
+.prose ul{margin:0 0 14px;padding-left:18px;color:#C4D2DF}
+.prose li{margin:0 0 6px}
+.toc{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 20px}
+.toc a{background:var(--panel);border:1px solid var(--line);border-radius:6px;
+  padding:5px 10px;font-size:12px;color:var(--chalk)}
+.toc a:hover{border-color:var(--accent)}
+.hit{color:var(--gain)} .miss{color:var(--loss)}
+.big{display:flex;gap:22px;flex-wrap:wrap;margin:0 0 20px}
+.big div{background:var(--panel);border:1px solid var(--line);
+  border-radius:8px;padding:12px 16px;min-width:120px}
+.big .n{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.big .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin-top:2px}
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:12px;
+  padding:16px 0 40px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head>
+<body><header><div class="wrap">
+<div class="brand"><h1>Projections</h1>
+<span class="stamp">NHL &middot; L20 window &middot; built Aug 02, 2026 18:58</span></div>
+<nav><a href="index.html" class="">Slate</a><a href="players.html" class="">Players</a><a href="ev.html" class="">Market</a><a href="tracking.html" class="">Tracking</a><a href="about.html" class="on">About</a></nav></div></header>
+<main><div class="wrap"><div class='toc'><a href='#values'>Every value on this site</a><a href='#inputs'>Where the numbers come from</a><a href='#windows'>The three windows</a><a href='#proj'>How a projection is built</a><a href='#matchup'>Matchup adjustment</a><a href='#market'>Props and EV</a><a href='#tracking'>How tracking stays honest</a><a href='#limits'>Known limitations</a></div><div class='prose'>
+<p>This site publishes output from an NHL player projection model that lives
+in a Google Sheet. Everything below describes how a number gets made, so you
+can judge how much weight it deserves.</p>
+
+<h3 id='values'>Every value on this site</h3></div>
+<table><thead><tr><th>Term</th><th>What it means</th></tr></thead>
+<tbody><tr><td class='team'>SOG</td><td>Projected shots on goal for the game.</td></tr><tr><td class='team'>G</td><td>Projected goals. On the Slate page, the sum across every skater on that team.</td></tr><tr><td class='team'>A</td><td>Projected assists.</td></tr><tr><td class='team'>Pts</td><td>Projected goals plus assists.</td></tr><tr><td class='team'>BLK</td><td>Projected blocked shots.</td></tr><tr><td class='team'>PIM</td><td>Projected penalty minutes.</td></tr><tr><td class='team'>Line</td><td>Even-strength forward line or defence pair from the posted lineup.</td></tr><tr><td class='team'>PP</td><td>Power-play unit from the posted lineup. Unit 1 versus unit 2 is the single biggest driver of projected points for most forwards.</td></tr><tr><td class='team'>Gap</td><td>Difference between the two teams' projected skater goals. Not a spread — see the caveat about empty-net and shootout scoring on the Slate page.</td></tr><tr><td class='team'>Opp CA/60</td><td>Shot attempts the opponent allows per 60 minutes at five-on-five. Higher means they give up more volume.</td></tr><tr><td class='team'>Opp HDCA/60</td><td>High-danger chances against per 60, five-on-five.</td></tr><tr><td class='team'>Opp SV%</td><td>The opposing starter's save percentage over the full-season window.</td></tr><tr><td class='team'>Shot adj</td><td>Multiplier applied to shot volume based on the opponent's chances-against rate versus league average. 1.00 is a neutral matchup.</td></tr><tr><td class='team'>Goalie adj</td><td>Multiplier applied to goals based on the opposing starter's save percentage versus league average.</td></tr><tr><td class='team'>Proj</td><td>On the Market page, the model's expected count for that stat — the mean of the distribution, not a probability.</td></tr><tr><td class='team'>Win%</td><td>Model probability that side wins, from the count distribution around Proj.</td></tr><tr><td class='team'>Mkt%</td><td>Probability implied by the price after removing the vig across both sides.</td></tr><tr><td class='team'>EV%</td><td>Expected profit per unit staked <em>if</em> the model's probability were correct. It frequently is not.</td></tr><tr><td class='team'>Bias</td><td>On the Tracking page, projected minus actual averaged across graded player-games. Positive means the model runs high on that stat.</td></tr><tr><td class='team'>MAE</td><td>Mean absolute error — average size of the miss, ignoring direction.</td></tr></tbody></table>
+<div class='prose'>
+
+<h3 id='inputs'>Where the numbers come from</h3>
+<p>Three sources feed the model. <strong>Daily Faceoff</strong> supplies the
+posted lineup: which line a skater is on, which power-play unit, which penalty
+-kill unit. <strong>Natural Stat Trick</strong> supplies the per-player rate
+data at each strength state, pulled through their API under a rate limit and
+cached locally so a repeat run costs nothing. The <strong>NHL schedule</strong>
+supplies opponents and home/away.</p>
+<p>Player identity is matched between Daily Faceoff and Natural Stat Trick by
+name, with anything ambiguous pushed to a manual review tab rather than
+guessed. A skater whose ID has not been resolved is simply absent from these
+pages; he is not silently projected at zero.</p>
+
+<h3 id='windows'>The three windows</h3>
+<p>Every stat is computed three ways. <strong>FS</strong> is the full prior
+season. <strong>L20</strong> is the player's last twenty games,
+<strong>L10</strong> his last ten. Short windows respond to a line promotion or
+a role change quickly and are noisy; the full season is stable and stale. This
+site is currently built on the <strong>L20</strong> window, and the
+Players page lets you compare all three for any skater.</p>
+<p>Early in a season the windows bridge from the prior season's data to the
+current one, one at a time, as enough games accumulate to make each window
+meaningful. Until a window is flipped over, it is describing last season.</p>
+
+<h3 id='proj'>How a projection is built</h3>
+<p>For each skater the model projects even-strength, power-play and
+penalty-kill ice time from his line and unit assignment, then multiplies each
+by his per-minute rate for that stat at that strength state. Rates are computed
+as a season or window total divided by games played and then by time on ice per
+game, which is the step that turns a twenty-game shot total into a per-game
+expectation.</p>
+<p>Goals use a blended finishing rate rather than a raw shooting percentage:
+a player's own conversion on high-danger chances, pulled toward a league
+baseline when his sample is thin. Power-play assists come from projected
+power-play shot volume times a league assist-per-shot constant, which is the
+crudest step in the whole model and the first place to look when a
+power-play-heavy forward's assist number looks wrong.</p>
+
+<h3 id='matchup'>Matchup adjustment</h3>
+<p>Three multipliers sit on top of the raw projection. A shot-volume adjustment
+scales attempts by how many the opponent allows relative to league average. A
+goalie adjustment scales goals by the opposing starter's save percentage
+relative to league average. A power-play adjustment scales power-play output by
+the opponent's penalty kill, weighted by how much of that player's ice time is
+actually on the power play. All three are ratios against a league mean, so 1.00
+means a neutral matchup and the adjustment does nothing.</p>
+
+<h3 id='market'>Props and EV</h3>
+<p>The Market page compares the model to posted player props from a single
+book. Counting stats are not normally distributed, so the probabilities come
+from count distributions instead: a negative binomial for shots, assists and
+blocks, which are more variable than a Poisson would allow; a Poisson for
+points; and the Poisson zero for anytime goalscorer. The dispersion parameters
+are informed guesses, not values fitted to data. Once the tracking table holds
+a few hundred graded player-games they should be re-estimated from the model's
+own residuals, and until that happens the probabilities on the Market page are
+softer than they look.</p>
+<p>With one book there is no line shopping and no consensus to anchor to. A
+large EV% is a disagreement between this model and BetOnline, and prop markets
+are soft enough that it is occasionally the book &mdash; but the base rate
+strongly favours the explanation that the model is wrong about that player.</p>
+
+<h3 id='tracking'>How tracking stays honest</h3>
+<p>The Google Sheet is a live worksheet: every run overwrites the previous
+day's numbers. That makes it useless as a record. So each time this exporter
+runs it copies the slate into a local table keyed on date, player, window and
+stat, inserting only if that key is not already present. The first projection
+written for a game is the one that gets graded, and it is never revised.
+Results come from the NHL's own box scores and are matched to projections by
+name, independent of the projection itself.</p>
+
+<h3 id='limits'>Known limitations</h3>
+<ul>
+<li>Penalty-kill shooting is hard-coded to zero. Shorthanded goals and shots
+exist and this model will never project one.</li>
+<li>Power-play assists use a single league-wide assist-per-shot constant, not a
+player-specific one.</li>
+<li>Team goals on the Slate page are a sum of skater projections, so they
+exclude empty-net goals and shootout deciders and read low against real
+finals.</li>
+<li>A skater with no prior-season data falls back to his recent-window ice time
+as a proxy, which is generous to rookies who have been promoted.</li>
+<li>Lineups are the posted ones. A late scratch, a goalie change after warmups,
+or an in-game injury is not reflected.</li>
+<li>No travel, rest, back-to-back, altitude, or referee effects.</li>
+<li>Opponent quality enters only through three multipliers. There is no
+line-versus-line matchup modelling, so a shutdown pair drawing a top line is
+invisible.</li>
+</ul>
+</div></div></main>
+<script>
+(function(){
+  var val=function(el,t){
+    var s=(el.getAttribute('data-v')!==null)?el.getAttribute('data-v'):el.textContent;
+    s=s.trim();
+    if(t==='num'){var n=parseFloat(s.replace(/[^0-9.+-]/g,''));return isNaN(n)?-Infinity:n;}
+    return s.toLowerCase();
+  };
+  document.querySelectorAll('table').forEach(function(tb){
+    var heads=tb.querySelectorAll('thead th');
+    heads.forEach(function(th,i){
+      if(!th.hasAttribute('data-t'))return;
+      th.setAttribute('tabindex','0');
+      var go=function(){
+        var t=th.getAttribute('data-t');
+        var dir=th.getAttribute('data-dir')==='asc'?'desc':'asc';
+        heads.forEach(function(h){h.removeAttribute('data-dir');});
+        th.setAttribute('data-dir',dir);
+        var body=tb.querySelector('tbody');
+        var all=Array.prototype.slice.call(body.querySelectorAll('tr'));
+        var rows=all.filter(function(r){return !r.classList.contains('det');});
+        var dets={};
+        all.forEach(function(r){
+          if(r.classList.contains('det'))dets[r.getAttribute('data-g')]=r;
+        });
+        rows.sort(function(a,b){
+          var x=val(a.cells[i],t),y=val(b.cells[i],t);
+          if(x<y)return dir==='asc'?-1:1;
+          if(x>y)return dir==='asc'?1:-1;
+          return 0;
+        });
+        rows.forEach(function(r){
+          body.appendChild(r);
+          var g=r.getAttribute('data-g');
+          if(g!==null&&dets[g])body.appendChild(dets[g]);
+        });
+      };
+      th.addEventListener('click',go);
+      th.addEventListener('keydown',function(ev){
+        if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();go();}
+      });
+    });
+  });
+  var tbl=document.querySelector('table'),
+      tb=tbl?tbl.querySelector('tbody'):null;
+  if(tb){
+    tb.addEventListener('click',function(ev){
+      var tr=ev.target.closest('tr.row');
+      if(!tr)return;
+      var g=tr.getAttribute('data-g');
+      var d=tb.querySelector("tr.det[data-g='"+g+"']");
+      if(!d)return;
+      var open=d.classList.toggle('show');
+      tr.classList.toggle('open',open);
+    });
+  }
+  var bd=document.querySelector('.board');
+  if(bd){
+    bd.addEventListener('click',function(ev){
+      var c=ev.target.closest('.game');
+      if(c&&c.querySelector('.det2'))c.classList.toggle('open');
+    });
+  }
+  var q=document.getElementById('q'),qn=document.getElementById('qn');
+  if(q){
+    var filter=function(){
+      var v=q.value.trim().toLowerCase(),shown=0,total=0;
+      if(tb){
+        tb.querySelectorAll('tr.row, tr:not(.det):not(.row)').forEach(function(tr){
+          total++;
+          var hit=!v||tr.textContent.toLowerCase().indexOf(v)>-1;
+          tr.style.display=hit?'':'none';
+          if(hit)shown++;
+          var g=tr.getAttribute('data-g');
+          if(g!==null){
+            var d=tb.querySelector("tr.det[data-g='"+g+"']");
+            if(d&&!hit){d.classList.remove('show');tr.classList.remove('open');}
+          }
+        });
+      }
+      if(bd){
+        bd.querySelectorAll('.game').forEach(function(c){
+          var hit=!v||c.textContent.toLowerCase().indexOf(v)>-1;
+          c.style.display=hit?'':'none';
+          if(!hit)c.classList.remove('open');
+        });
+      }
+      if(qn)qn.textContent=v?shown+' / '+total:'';
+    };
+    q.addEventListener('input',filter);
+    q.addEventListener('keydown',function(ev){
+      if(ev.key==='Escape'){q.value='';filter();}
+    });
+  }
+  var board=document.querySelector('.board'),sel=document.getElementById('bsort'),
+      btn=document.getElementById('bdir');
+  if(board&&sel){
+    var asc=true;
+    var apply=function(){
+      var k=sel.value,t=sel.options[sel.selectedIndex].getAttribute('data-t');
+      var cards=Array.prototype.slice.call(board.querySelectorAll('.game'));
+      cards.sort(function(a,b){
+        var x=a.getAttribute('data-'+k),y=b.getAttribute('data-'+k);
+        if(t==='num'){x=parseFloat(x);y=parseFloat(y);}
+        else{x=(x||'').toLowerCase();y=(y||'').toLowerCase();}
+        if(x<y)return asc?-1:1;
+        if(x>y)return asc?1:-1;
+        return 0;
+      });
+      cards.forEach(function(c){board.appendChild(c);});
+      btn.textContent=asc?'\u2191':'\u2193';
+    };
+    sel.addEventListener('change',apply);
+    btn.addEventListener('click',function(){asc=!asc;apply();});
+  }
+})();
+</script>
+<footer><div class="wrap">Model output, not advice. A single skater's
+game is mostly noise &mdash; these are expected values over many games,
+not forecasts of tonight.</div></footer>
+</body></html>

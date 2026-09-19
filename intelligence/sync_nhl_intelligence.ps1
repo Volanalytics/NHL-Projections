@@ -1,10 +1,12 @@
 param(
-  [string]$RepoRoot = (Get-Location).Path
+  [string]$RepoRoot = (Get-Location).Path,
+  [string]$Branch = "main"
 )
 
 $ErrorActionPreference = "Stop"
 Set-Location $RepoRoot
 
+$base = "https://raw.githubusercontent.com/Volanalytics/NHL-Projections/$Branch"
 $required = @(
   "intelligence/run_nhl_intelligence_cycle.py",
   "intelligence/resolve_nhl_gate.py",
@@ -19,24 +21,27 @@ $required = @(
   "intelligence/nhl_intelligence_schema_v1.0.json"
 )
 
-if (-not (Test-Path ".git")) {
-  throw "This folder is not the NHL-Projections Git repository. Clone/open Volanalytics/NHL-Projections first, then run this script from its root."
-}
+Write-Host "NHL Intelligence local sync"
+Write-Host "Target: $RepoRoot"
+Write-Host "Source: Volanalytics/NHL-Projections ($Branch)"
+Write-Host ""
 
-Write-Host "Syncing NHL Intelligence package from origin/main..."
-git fetch origin main
-if ($LASTEXITCODE -ne 0) { throw "git fetch failed." }
+New-Item -ItemType Directory -Force "intelligence" | Out-Null
+New-Item -ItemType Directory -Force "intelligence/current" | Out-Null
 
 foreach ($path in $required) {
-  git checkout origin/main -- $path
-  if ($LASTEXITCODE -ne 0) { throw "Failed to sync $path" }
+  $dest = Join-Path $RepoRoot ($path -replace "/", "\")
+  $parent = Split-Path $dest -Parent
+  New-Item -ItemType Directory -Force $parent | Out-Null
+  $uri = "$base/$path"
+  Write-Host "DOWNLOAD $path"
+  Invoke-WebRequest -Uri $uri -OutFile $dest -UseBasicParsing
 }
-
-New-Item -ItemType Directory -Force "intelligence/current" | Out-Null
 
 $missing = @()
 foreach ($path in $required) {
-  if (-not (Test-Path $path)) { $missing += $path }
+  $dest = Join-Path $RepoRoot ($path -replace "/", "\")
+  if (-not (Test-Path $dest)) { $missing += $path }
 }
 if ($missing.Count -gt 0) {
   throw ("Sync incomplete. Missing: " + ($missing -join ", "))
@@ -44,10 +49,12 @@ if ($missing.Count -gt 0) {
 
 Write-Host ""
 Write-Host "NHL Intelligence package synced successfully."
-Write-Host "Place the latest snapshot at:"
-Write-Host "  intelligence/current/nhl_model_snapshot.json"
+Write-Host "No Git repository is required for C:\NHL."
 Write-Host ""
-Write-Host "Then dry-run:"
-Write-Host "  python intelligence/run_nhl_intelligence_cycle.py --publish-stage"
+Write-Host "Place the latest exported snapshot at:"
+Write-Host "  intelligence\current\nhl_model_snapshot.json"
 Write-Host ""
-Write-Host "No GitHub publication is performed by this sync script."
+Write-Host "Then run the deterministic dry test:"
+Write-Host "  python intelligence\run_nhl_intelligence_cycle.py --publish-stage"
+Write-Host ""
+Write-Host "This sync script does not publish anything to GitHub."

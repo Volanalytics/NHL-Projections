@@ -40,8 +40,6 @@ def main():
         r["game_id"]=allowed[qid]["game_id"]; r["domain"]=allowed[qid]["domain"]
         if not r.get("researched_at"): r["researched_at"]=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
         accepted.append(r)
-        if not r.get("researched_at"): r["researched_at"]=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
-        accepted.append(r)
     for s in incoming.get("sources",[]):
         sid=s.get("source_id")
         if not sid or not s.get("url") or not s.get("retrieved_at"): raise SystemExit("Source requires source_id/url/retrieved_at")

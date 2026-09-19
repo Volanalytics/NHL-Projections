@@ -57,12 +57,18 @@ def main():
     args=ap.parse_args()
     snap=load(args.snapshot);queue=maybe(args.queue,{"tasks":[]});results=maybe(args.results,{"results":[]})
     ledger=maybe(args.ledger,{"sources":[]})
+    plan=maybe("intelligence/current/run_plan.json",{"games":[]})
+    plan_by_game={x.get("game_id"):x for x in plan.get("games",[])}
     by_game={}
     for r in results.get("results",[]):
         by_game.setdefault(r.get("game_id"),[]).append(r)
     games=[]
     for src in snap.get("games",[]):
         g=copy.deepcopy(src);g["findings"]=[];g["sources"]=[]
+        gp=plan_by_game.get(g.get("game_id"),{})
+        g["gate"]=gp.get("gate") or g.get("gate")
+        g["minutes_to_puck_drop"]=gp.get("minutes_to_puck_drop")
+        g["freeze"]=bool(gp.get("freeze",False))
         # Preserve deterministic model/data conflicts from the frozen snapshot.
         g["conflicts"]=copy.deepcopy(src.get("conflicts",[]) or [])
         g["reprojection_required"]=any(bool(x.get("reprojection_required")) or x.get("severity")=="CRITICAL" for x in g["conflicts"])

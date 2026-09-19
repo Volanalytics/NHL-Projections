@@ -77,6 +77,7 @@ def main():
     ap.add_argument("--gate",choices=list(GATE_LIMITS))
     ap.add_argument("--results",default="intelligence/current/research_results.json")
     ap.add_argument("--policy",default="intelligence/research_policy_v1.0.json")
+    ap.add_argument("--as-of",help="UTC ISO timestamp used for deterministic TTL testing")
     args=ap.parse_args()
     snap=load(args.snapshot); tasks=[]
     policy=load(args.policy) if os.path.exists(args.policy) else {"gates":{}}
@@ -84,7 +85,8 @@ def main():
     prior_by_task={}
     if prior.get("slate_date") in (None,snap.get("slate_date")):
         prior_by_task={x.get("task_id") or x.get("queue_id"):x for x in prior.get("results",[]) if x.get("task_id") or x.get("queue_id")}
-    now_dt=datetime.now(timezone.utc)
+    now_dt=datetime.fromisoformat(args.as_of.replace("Z","+00:00")) if args.as_of else datetime.now(timezone.utc)
+    if now_dt.tzinfo is None: now_dt=now_dt.replace(tzinfo=timezone.utc)
 
     def fresh_prior(task_id, gate):
         r=prior_by_task.get(task_id)

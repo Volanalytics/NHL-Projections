@@ -25,7 +25,9 @@ function exportNhlIntelligenceSnapshot() {
   const review = readSheetObjects_(ss, sheetName_('MATCH_REVIEW', 'Match_Review'), true);
   const runLog = readSheetObjects_(ss, sheetName_('LOG', 'Run_Log'), true);
 
-  // Match_Review is historical; keep only the latest actionable row per player/team.\n  const actionableReview = actionableMatchReview_(review);\n  const conflicts = buildModelConflicts_(lineups, matchup, projections, summary, actionableReview);
+  // Match_Review is historical; keep only the latest actionable row per player/team.
+  const actionableReview = actionableMatchReview_(review);
+  const conflicts = buildModelConflicts_(lineups, matchup, projections, summary, actionableReview);
   const snapshot = {
     schema_version: '1.0',
     generated_at: now.toISOString(),

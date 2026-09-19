@@ -76,7 +76,7 @@ def render(data):
         cs=g.get("conflicts",[])
         out.extend(f"<li>{e(c.get('conflict_type','CONFLICT'))} · {e(c.get('severity'))} · {e(c.get('summary'))}</li>" for c in cs)
         if not cs:out.append("<li>None</li>")
-        out.append("</ul><h4>Sources</h4><p class='note>"+""+"</p><ul>")
+        out.append("</ul><h4>Sources</h4><ul>")
         src=g.get("sources",[]);out.extend(f"<li>{e(x)}</li>" for x in src)
         if not src:out.append("<li>None recorded</li>")
         out.append("</ul></details>")

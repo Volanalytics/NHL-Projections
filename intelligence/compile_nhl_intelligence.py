@@ -53,7 +53,7 @@ def main():
     ap.add_argument("--queue",default="intelligence/current/research_queue.json")
     ap.add_argument("--results",default="intelligence/current/research_results.json")
     ap.add_argument("--ledger",default="intelligence/current/source_ledger.json")
-    ap.add_argument("--out",default="intelligence/current/nhl_intelligence.json")
+    ap.add_argument("--out","--output",dest="out",default="intelligence/current/nhl_intelligence.json")
     args=ap.parse_args()
     snap=load(args.snapshot);queue=maybe(args.queue,{"tasks":[]});results=maybe(args.results,{"results":[]})
     ledger=maybe(args.ledger,{"sources":[]})
@@ -62,8 +62,10 @@ def main():
         by_game.setdefault(r.get("game_id"),[]).append(r)
     games=[]
     for src in snap.get("games",[]):
-        g=copy.deepcopy(src);g["findings"]=[];g["conflicts"]=[];g["sources"]=[]
-        g["reprojection_required"]=False
+        g=copy.deepcopy(src);g["findings"]=[];g["sources"]=[]
+        # Preserve deterministic model/data conflicts from the frozen snapshot.
+        g["conflicts"]=copy.deepcopy(src.get("conflicts",[]) or [])
+        g["reprojection_required"]=any(bool(x.get("reprojection_required")) or x.get("severity")=="CRITICAL" for x in g["conflicts"])
         for r in by_game.get(g["game_id"],[]):
             f=finding(r);g["findings"].append(f);g["sources"].extend(f["source_ids"])
             ctype=r.get("conflict_type")

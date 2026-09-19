@@ -139,7 +139,14 @@ def main():
             "queue_is_fact_finding_not_projection_generation":True,
             "reuse_valid_sources":True
         },
-        "task_count":len(tasks),"tasks":tasks
+        "task_count":len(tasks),
+        "work_summary":{
+            "local_review":sum(t.get("status")=="LOCAL_REVIEW" for t in tasks),
+            "reused":sum(t.get("status")=="REUSED" for t in tasks),
+            "fresh_external_required":sum(t.get("status")=="PENDING" for t in tasks)
+        },
+        "fresh_external_tasks":[t["task_id"] for t in tasks if t.get("status")=="PENDING"],
+        "tasks":tasks
     }
     atomic(args.out,payload)
     print(f"Wrote {args.out}: {len(tasks)} tasks")

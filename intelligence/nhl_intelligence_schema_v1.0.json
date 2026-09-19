@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nhl_intelligence.schema.json",
+  "title": "NHL Intelligence Package",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "slate_date", "projection_source", "pipeline", "games"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "generated_at": {"type": "string"},
+    "slate_date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "projection_source": {
+      "type": "object",
+      "required": ["system", "immutable"],
+      "properties": {
+        "system": {"const": "Google Sheets"},
+        "spreadsheet_id": {"type": ["string", "null"]},
+        "snapshot_at": {"type": ["string", "null"]},
+        "immutable": {"const": true}
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "properties": {
+        "dfo": {"$ref": "#/$defs/componentStatus"},
+        "nst_full_season": {"$ref": "#/$defs/componentStatus"},
+        "rolling_l20_l10": {"$ref": "#/$defs/componentStatus"},
+        "player_matching": {"$ref": "#/$defs/componentStatus"},
+        "goalie_data": {"$ref": "#/$defs/componentStatus"},
+        "matchup": {"$ref": "#/$defs/componentStatus"},
+        "projections": {"$ref": "#/$defs/componentStatus"}
+      },
+      "additionalProperties": false
+    },
+    "games": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/game"}
+    }
+  },
+  "$defs": {
+    "componentStatus": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["OK", "WARNING", "ERROR", "STALE", "UNRESOLVED"]},
+        "updated_at": {"type": ["string", "null"]},
+        "detail": {"type": ["string", "null"]}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": ["domain", "status", "severity", "summary"],
+      "properties": {
+        "domain": {"type": "string"},
+        "status": {"enum": ["NOT_RESEARCHED", "CONFIRMED", "UNRESOLVED", "CONFLICT", "EXHAUSTED"]},
+        "severity": {"enum": ["INFO", "LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+        "summary": {"type": "string"},
+        "model_value": {},
+        "observed_value": {},
+        "source_ids": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "game": {
+      "type": "object",
+      "required": ["game_id", "away", "home", "gate", "state", "model", "goalies", "findings", "conflicts"],
+      "properties": {
+        "game_id": {"type": "string"},
+        "puck_drop": {"type": ["string", "null"]},
+        "away": {"type": "string"},
+        "home": {"type": "string"},
+        "gate": {"enum": ["EARLY", "GAME_DAY", "T-90", "T-30", "PUCK_DROP"]},
+        "state": {"enum": ["BASELINE", "ACTIVE_RESEARCH", "CURRENT", "UNRESOLVED", "CONFLICT", "REPROJECTION_REQUIRED", "FROZEN"]},
+        "model": {
+          "type": "object",
+          "properties": {
+            "away_goals": {"type": ["number", "null"]},
+            "home_goals": {"type": ["number", "null"]},
+            "total": {"type": ["number", "null"]},
+            "snapshot_at": {"type": ["string", "null"]}
+          }
+        },
+        "goalies": {
+          "type": "object",
+          "properties": {
+            "away": {"$ref": "#/$defs/goalie"},
+            "home": {"$ref": "#/$defs/goalie"}
+          }
+        },
+        "lineup_status": {"enum": ["CURRENT", "UNRESOLVED", "CONFLICT"]},
+        "special_teams_status": {"enum": ["CURRENT", "UNRESOLVED", "CONFLICT"]},
+        "market": {"type": "object"},
+        "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+        "conflicts": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+        "reprojection_required": {"type": "boolean"},
+        "sources": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "goalie": {
+      "type": "object",
+      "properties": {
+        "model_name": {"type": ["string", "null"]},
+        "observed_name": {"type": ["string", "null"]},
+        "status": {"enum": ["UNKNOWN", "PROJECTED", "EXPECTED", "CONFIRMED", "CHANGED"]},
+        "model_hdsave_pct": {"type": ["number", "null"]}
+      }
+    }
+  }
+}

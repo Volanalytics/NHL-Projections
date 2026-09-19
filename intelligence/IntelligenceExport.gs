@@ -40,7 +40,7 @@ function exportNhlIntelligenceSnapshot() {
       immutable: true
     },
     pipeline: buildPipelineStatus_(runLog, now),
-    games: buildGameSnapshot_(summary, matchup, lineups, conflicts),
+    games: buildGameSnapshot_(summary, matchup, lineups, conflicts, buildPuckDropMap_(slateDate)),
     players: buildPlayerSnapshot_(projections, lineups),
     model_conflicts: conflicts
   };
@@ -137,7 +137,7 @@ function statWindow_(r, w) {
   };
 }
 
-function buildGameSnapshot_(summary, matchup, lineups, conflicts) {
+function buildGameSnapshot_(summary, matchup, lineups, conflicts, puckDropMap) {
   const teamRows = summary.length ? summary : matchup;
   const byTeam = {};
   teamRows.forEach(r => {
@@ -166,7 +166,9 @@ function buildGameSnapshot_(summary, matchup, lineups, conflicts) {
 
     games.push({
       game_id: gameId,
-      puck_drop: first_(h, ['Puck_Drop', 'Game_Time', 'Start_Time', 'Date']),
+      // Puck drop must be an actual NHL API timestamp. Never use a date-only
+      // sheet value here: midnight placeholders corrupt lifecycle gate selection.
+      puck_drop: (puckDropMap && puckDropMap[gameId]) || null,
       away: awayTeam,
       home: homeTeam,
       model: {
@@ -187,6 +189,46 @@ function buildGameSnapshot_(summary, matchup, lineups, conflicts) {
     });
   });
   return games;
+}
+
+function buildPuckDropMap_(slateDate) {
+  const out = {};
+  const date = String(slateDate || '').trim();
+  if (!date) return out;
+
+  try {
+    const base = (typeof NHL_SCHEDULE_BASE !== 'undefined' && NHL_SCHEDULE_BASE)
+      ? NHL_SCHEDULE_BASE
+      : 'https://api-web.nhle.com';
+    const url = base + '/v1/schedule/' + encodeURIComponent(date);
+    const response = UrlFetchApp.fetch(url, {muteHttpExceptions:true});
+    if (response.getResponseCode() !== 200) {
+      logExportSafe_('Intelligence Schedule', 'WARNING',
+        'HTTP ' + response.getResponseCode() + ' for ' + url + '; puck_drop left null');
+      return out;
+    }
+
+    const json = JSON.parse(response.getContentText());
+    let games = json.games || [];
+    if (!games.length && json.gameWeek) {
+      const day = json.gameWeek.find(w => String(w.date || '') === date);
+      games = day ? (day.games || []) : [];
+    }
+
+    games.forEach(g => {
+      const home = g.homeTeam && (g.homeTeam.abbrev || g.homeTeam.abbreviation);
+      const away = g.awayTeam && (g.awayTeam.abbrev || g.awayTeam.abbreviation);
+      const start = g.startTimeUTC || null;
+      if (home && away && start) out[away + '@' + home] = start;
+    });
+
+    logExportSafe_('Intelligence Schedule', 'OK',
+      Object.keys(out).length + ' puck-drop timestamps resolved for ' + date);
+  } catch (e) {
+    logExportSafe_('Intelligence Schedule', 'WARNING',
+      'Could not resolve puck-drop timestamps: ' + e.message);
+  }
+  return out;
 }
 
 function goalieForTeam_(team, matchup, lineups) {

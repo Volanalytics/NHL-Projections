@@ -1,0 +1,33 @@
+{
+  "version":"1.0",
+  "system":"NHL Pregame Intelligence Research Policy",
+  "objective":"Research only material facts that can audit or contextualize the frozen Google Sheets projection snapshot.",
+  "gates":{
+    "EARLY":{"domains":["rest_travel_schedule","injuries_and_returns","situational"],"max_external_items":6,"reuse_hours":18},
+    "GAME_DAY":{"domains":["starting_goalies","lines_and_scratches","injuries_and_returns","coach_player_media","market"],"max_external_items":12,"reuse_hours":6},
+    "T-90":{"domains":["starting_goalies","lines_and_scratches","power_play","penalty_kill","expected_toi_and_role","market"],"max_external_items":16,"reuse_hours":2},
+    "T-30":{"domains":["starting_goalies","lines_and_scratches","power_play","penalty_kill","injuries_and_returns","market"],"max_external_items":12,"reuse_hours":0.5},
+    "PUCK_DROP":{"domains":[],"max_external_items":0,"reuse_hours":9999}
+  },
+  "source_hierarchy":[
+    {"tier":1,"types":["official_team","official_league","credentialed_team_media"],"use":"confirmation"},
+    {"tier":2,"types":["credentialed_beat_reporter","reputable_national_reporter","reputable_local_media"],"use":"reported pregame facts"},
+    {"tier":3,"types":["lineup_aggregator","market_data_provider","statistics_provider"],"use":"structured corroboration"},
+    {"tier":4,"types":["social_discussion","fan_commentary"],"use":"context only; never sole confirmation of material conflict"}
+  ],
+  "confirmation_rules":{
+    "starting_goalie_change":{"minimum_tier":2,"prefer_tier":1,"material_effect":"REPROJECTION_REQUIRED"},
+    "projected_player_scratched":{"minimum_tier":2,"prefer_tier":1,"material_effect":"REPROJECTION_REQUIRED"},
+    "material_line_change":{"minimum_tier":2,"material_effect":"CONFLICT"},
+    "material_pp_unit_change":{"minimum_tier":2,"material_effect":"CONFLICT"},
+    "material_pk_unit_change":{"minimum_tier":2,"material_effect":"CONFLICT"}
+  },
+  "cost_controls":{
+    "reuse_existing_source_ledger":true,
+    "deduplicate_by_url_and_fact":true,
+    "skip_research_when_model_and_recent_tier_1_or_2_evidence_agree":true,
+    "escalate_only_material_unresolved_items":true,
+    "daily_faceoff_independent_pulls":0,
+    "preserve_last_known_good_on_failure":true
+  }
+}

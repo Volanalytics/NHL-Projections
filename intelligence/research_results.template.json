@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "generated_at": null,
+  "results": [
+    {
+      "task_id": "EXAMPLE_GAME:starting_goalies",
+      "game_id": "EXAMPLE_GAME",
+      "domain": "starting_goalies",
+      "status": "CONFIRMED",
+      "severity": "CRITICAL",
+      "summary": "Example only. Replace or remove before production.",
+      "side": "away",
+      "goalie_status": "CONFIRMED",
+      "model_value": "Model Goalie",
+      "observed_value": "Observed Goalie",
+      "observed": "Observed Goalie",
+      "conflict_type": null,
+      "source_ids": ["src_example"]
+    }
+  ]
+}

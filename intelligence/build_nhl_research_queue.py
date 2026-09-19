@@ -1,6 +1,6 @@
 """Build a bounded NHL intelligence research queue from the frozen model snapshot."""
 import argparse, json, os, tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 DOMAINS = [
     ("starting_goalies", "CRITICAL"),
@@ -75,8 +75,28 @@ def main():
     ap.add_argument("--out","--output",dest="out",default="intelligence/current/research_queue.json")
     ap.add_argument("--run-plan",default="intelligence/current/run_plan.json")
     ap.add_argument("--gate",choices=list(GATE_LIMITS))
+    ap.add_argument("--results",default="intelligence/current/research_results.json")
+    ap.add_argument("--policy",default="intelligence/research_policy_v1.0.json")
     args=ap.parse_args()
     snap=load(args.snapshot); tasks=[]
+    policy=load(args.policy) if os.path.exists(args.policy) else {"gates":{}}
+    prior=load(args.results) if os.path.exists(args.results) else {"results":[]}
+    prior_by_task={}
+    if prior.get("slate_date") in (None,snap.get("slate_date")):
+        prior_by_task={x.get("task_id") or x.get("queue_id"):x for x in prior.get("results",[]) if x.get("task_id") or x.get("queue_id")}
+    now_dt=datetime.now(timezone.utc)
+
+    def fresh_prior(task_id, gate):
+        r=prior_by_task.get(task_id)
+        if not r: return None
+        hours=policy.get("gates",{}).get(gate,{}).get("reuse_hours",0)
+        stamp=r.get("researched_at") or r.get("retrieved_at") or r.get("generated_at")
+        if not stamp: return None
+        try:
+            dt=datetime.fromisoformat(stamp.replace("Z","+00:00"))
+            if dt.tzinfo is None: dt=dt.replace(tzinfo=timezone.utc)
+        except Exception: return None
+        return r if now_dt-dt <= timedelta(hours=float(hours)) else None
     plan=load(args.run_plan) if os.path.exists(args.run_plan) else {"games":[]}
     plan_by_game={x.get("game_id"):x for x in plan.get("games",[])}
     players=snap.get("players",[])
@@ -102,7 +122,12 @@ def main():
         added=0
         for domain in allowed:
             if domain not in severity_by_domain or added>=max_items: continue
-            tasks.append(task(gg,domain,severity_by_domain[domain])); added+=1
+            t=task(gg,domain,severity_by_domain[domain])
+            old=fresh_prior(t["task_id"],gate)
+            if old:
+                t["status"]="REUSED"
+                t["reuse"]={"source_task_id":t["task_id"],"prior_status":old.get("status"),"researched_at":old.get("researched_at") or old.get("retrieved_at") or old.get("generated_at")}
+            tasks.append(t); added+=1
     payload={
         "schema_version":"1.0","generated_at":now(),"slate_date":snap.get("slate_date"),
         "snapshot_generated_at":snap.get("generated_at"),

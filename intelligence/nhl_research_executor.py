@@ -27,10 +27,10 @@ def main():
     a=ap.parse_args()
     q=load(a.queue); incoming=load(a.incoming)
     if not q: raise SystemExit("Research queue missing.")
-    allowed={x["queue_id"]:x for x in q.get("items",[])}
+    allowed={x["task_id"]:x for x in q.get("tasks",[])}
     accepted=[]; sources={}
     for r in incoming.get("results",[]):
-        qid=r.get("queue_id")
+        qid=r.get("task_id") or r.get("queue_id")
         if qid not in allowed: raise SystemExit("Result not present in bounded queue: "+str(qid))
         if r.get("status") not in VALID_STATUS: raise SystemExit("Bad status: "+str(r.get("status")))
         if r.get("severity","INFO") not in VALID_SEVERITY: raise SystemExit("Bad severity")

@@ -25,7 +25,7 @@ function exportNhlIntelligenceSnapshot() {
   const review = readSheetObjects_(ss, sheetName_('MATCH_REVIEW', 'Match_Review'), true);
   const runLog = readSheetObjects_(ss, sheetName_('LOG', 'Run_Log'), true);
 
-  const conflicts = buildModelConflicts_(lineups, matchup, projections, summary, review);
+  // Match_Review is historical; keep only the latest actionable row per player/team.\n  const actionableReview = actionableMatchReview_(review);\n  const conflicts = buildModelConflicts_(lineups, matchup, projections, summary, actionableReview);
   const snapshot = {
     schema_version: '1.0',
     generated_at: now.toISOString(),
@@ -196,7 +196,7 @@ function goalieForTeam_(team, matchup, lineups) {
                 first_(oppRow || {}, ['Opp_Starting_Goalie']),
     status: flagged.length === 1 ? 'PROJECTED' : flagged.length > 1 ? 'UNKNOWN' : 'UNKNOWN',
     candidates_flagged: flagged.map(r => first_(r, ['Player_Name'])),
-    model_hdsave_pct: first_(oppRow || {}, ['Opp_Goalie_HDSVpct', 'Opp_HDSV%', 'Opp_Goalie_HDSV'])
+    model_hdsave_pct: first_(oppRow || {}, ['Opp_Goalie_HDSVpct', 'Opp_Goalie_HDSV%', 'Opp_HDSV%', 'Opp_Goalie_HDSV', 'Goalie_HDSV%', 'HDSV%'])
   };
 }
 
@@ -212,6 +212,28 @@ function specialTeamsStatus_(away, home, lineups) {
   const hasPP = rows.some(r => first_(r, ['PP_Unit']) !== null);
   const hasPK = rows.some(r => first_(r, ['PK_Unit']) !== null);
   return hasPP && hasPK ? 'CURRENT' : 'UNRESOLVED';
+}
+
+
+function normalizePlayer_(v) {
+  return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function actionableMatchReview_(rows) {
+  // Match_Review can retain historical attempts. The last row for a normalized
+  // player/team is authoritative; resolved latest rows suppress older unresolved rows.
+  const latest = {};
+  rows.forEach((r, i) => {
+    const player = first_(r, ['LWL_Name', 'Player_Name', 'Player'], '');
+    const team = first_(r, ['LWL_Team', 'Team'], '');
+    const key = normalizePlayer_(player) + '|' + String(team || '').toUpperCase().trim();
+    if (key === '|') return;
+    latest[key] = {row:r, ordinal:i};
+  });
+  return Object.keys(latest).map(k => latest[k].row).filter(r => {
+    const status = String(first_(r, ['Status'], '') || '').toLowerCase().trim();
+    return status !== 'resolved' && status !== 'ok' && status !== 'matched';
+  });
 }
 
 function buildModelConflicts_(lineups, matchup, projections, summary, review) {
@@ -270,7 +292,7 @@ function buildPipelineStatus_(runLog, now) {
   const specs = {
     dfo: ['Daily Faceoff', 'DFO', 'Lineups'],
     nst_full_season: ['FS Bulk', 'NST', 'Skater FS'],
-    rolling_l20_l10: ['Rolling', 'L20', 'L10'],
+    rolling_l20_l10: ['Rolling', 'L20', 'L10', 'Game Log', 'Game Logs', 'Rolling Windows'],
     player_matching: ['Player Matching', 'Resolve', 'Manual Resolutions'],
     goalie_data: ['Goalie'],
     matchup: ['Matchup Build', 'Matchup'],

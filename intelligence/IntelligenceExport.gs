@@ -26,7 +26,7 @@ function exportNhlIntelligenceSnapshot() {
   const runLog = readSheetObjects_(ss, sheetName_('LOG', 'Run_Log'), true);
 
   // Match_Review is historical; keep only the latest actionable row per player/team.
-  const actionableReview = actionableMatchReview_(review);
+  const actionableReview = actionableMatchReview_(review, lineups);
   const conflicts = buildModelConflicts_(lineups, matchup, projections, summary, actionableReview);
   const snapshot = {
     schema_version: '1.0',
@@ -221,15 +221,23 @@ function normalizePlayer_(v) {
   return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-function actionableMatchReview_(rows) {
-  // Match_Review can retain historical attempts. The last row for a normalized
-  // player/team is authoritative; resolved latest rows suppress older unresolved rows.
+function actionableMatchReview_(rows, lineups) {
+  // Match_Review is historical and can contain stale/bad team associations from
+  // earlier matching attempts. Only a latest unresolved row that still matches a
+  // player/team on the CURRENT Lineups sheet is actionable for this snapshot.
+  const current = {};
+  (lineups || []).forEach(r => {
+    const player = first_(r, ['Player_Name', 'Player'], '');
+    const team = first_(r, ['Team'], '');
+    const key = normalizePlayer_(player) + '|' + String(team || '').toUpperCase().trim();
+    if (key !== '|') current[key] = true;
+  });
   const latest = {};
   rows.forEach((r, i) => {
     const player = first_(r, ['LWL_Name', 'Player_Name', 'Player'], '');
     const team = first_(r, ['LWL_Team', 'Team'], '');
     const key = normalizePlayer_(player) + '|' + String(team || '').toUpperCase().trim();
-    if (key === '|') return;
+    if (key === '|' || !current[key]) return;
     latest[key] = {row:r, ordinal:i};
   });
   return Object.keys(latest).map(k => latest[k].row).filter(r => {
@@ -313,9 +321,11 @@ function latestLogStatus_(rows, aliases, now) {
   if (!matches.length) return {status:'UNRESOLVED', updated_at:null, detail:'No matching Run_Log entry'};
   const r = matches[matches.length - 1];
   const raw = String(first_(r, ['Status'], 'UNRESOLVED') || '').toUpperCase();
-  const status = raw === 'OK' || raw === 'COMPLETED' ? 'OK' :
-                 raw === 'WARNING' ? 'WARNING' : raw === 'ERROR' ? 'ERROR' : 'UNRESOLVED';
-  return {status:status, updated_at:first_(r, ['Timestamp']), detail:first_(r, ['Details'], '')};
+  const detail = String(first_(r, ['Details'], '') || '');
+  const completedDetail = /^\s*completed\s*:/i.test(detail);
+  const status = raw === 'OK' || raw === 'COMPLETED' || raw === 'SUCCESS' || raw === 'DONE' || completedDetail ? 'OK' :
+                 raw === 'WARNING' ? 'WARNING' : raw === 'ERROR' || raw === 'FAILED' ? 'ERROR' : 'UNRESOLVED';
+  return {status:status, updated_at:first_(r, ['Timestamp']), detail:detail};
 }
 
 function truthyFlag_(v) {

@@ -95,6 +95,8 @@ def main():
     tasks=queue.get("tasks",[])
     local_tasks=[t for t in tasks if t.get("status")=="LOCAL_REVIEW"]
     external_tasks=[t for t in tasks if t.get("status")!="LOCAL_REVIEW"]
+    reused_tasks=[t for t in external_tasks if t.get("status")=="REUSED"]
+    pending_tasks=[t for t in external_tasks if t.get("status")=="PENDING"]
     external_ids={t.get("task_id") for t in external_tasks}
     external_completed=len(completed & external_ids)
     source_catalog={x.get("source_id"):x for x in ledger.get("sources",[]) if x.get("source_id")}
@@ -104,7 +106,8 @@ def main():
       "research":{
         "queue_generated_at":queue.get("generated_at"),"tasks":len(tasks),
         "external_tasks":len(external_tasks),"completed":external_completed,
-        "pending":max(0,len(external_tasks)-external_completed),
+        "reused":len(reused_tasks),"fresh_research_required":len(pending_tasks),
+        "pending":len([t for t in pending_tasks if t.get("task_id") not in completed]),
         "local_review":len(local_tasks),"source_count":len(ledger.get("sources",[]))
       },
       "source_catalog":source_catalog,

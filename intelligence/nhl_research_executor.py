@@ -32,6 +32,9 @@ def main():
     for r in incoming.get("results",[]):
         qid=r.get("task_id") or r.get("queue_id")
         if qid not in allowed: raise SystemExit("Result not present in bounded queue: "+str(qid))
+        queue_status=allowed[qid].get("status","PENDING")
+        if queue_status!="PENDING":
+            raise SystemExit(f"Incoming result rejected for non-PENDING task {qid}: queue status is {queue_status}")
         if r.get("status") not in VALID_STATUS: raise SystemExit("Bad status: "+str(r.get("status")))
         if r.get("severity","INFO") not in VALID_SEVERITY: raise SystemExit("Bad severity")
         if r.get("model_effect","NONE") not in VALID_EFFECT: raise SystemExit("Bad model_effect")
@@ -52,6 +55,8 @@ def main():
     for old in existing_results.get("results",[]):
         qid=old.get("task_id") or old.get("queue_id")
         if qid in allowed: result_by_task[qid]=old
+    if existing_ledger.get("slate_date") not in (None,q.get("slate_date")):
+        existing_ledger={"sources":[]}
     source_by_id={x.get("source_id"):x for x in existing_ledger.get("sources",[]) if x.get("source_id")}
     source_by_id.update(sources)
     for r in accepted:
@@ -63,7 +68,7 @@ def main():
     merged_results=list(result_by_task.values())
     merged_sources=list(source_by_id.values())
     write(a.results,{"schema_version":"1.0","generated_at":now,"slate_date":q.get("slate_date"),"results":merged_results})
-    write(a.ledger,{"schema_version":"1.0","generated_at":now,"sources":merged_sources})
+    write(a.ledger,{"schema_version":"1.0","generated_at":now,"slate_date":q.get("slate_date"),"sources":merged_sources})
     print(f"Accepted {len(accepted)} bounded findings and {len(sources)} incoming sources.")
     print(f"Merged totals: {len(merged_results)} findings and {len(merged_sources)} sources.")
 

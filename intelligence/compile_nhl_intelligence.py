@@ -92,14 +92,22 @@ def main():
             g["special_teams_status"]="CONFLICT"
         g["state"]=derive_state(g);games.append(g)
     completed={r.get("task_id") for r in results.get("results",[]) if r.get("task_id")}
+    tasks=queue.get("tasks",[])
+    local_tasks=[t for t in tasks if t.get("status")=="LOCAL_REVIEW"]
+    external_tasks=[t for t in tasks if t.get("status")!="LOCAL_REVIEW"]
+    external_ids={t.get("task_id") for t in external_tasks}
+    external_completed=len(completed & external_ids)
+    source_catalog={x.get("source_id"):x for x in ledger.get("sources",[]) if x.get("source_id")}
     package={
       "schema_version":"1.0","generated_at":now(),"slate_date":snap.get("slate_date"),
       "projection_source":snap.get("projection_source",{}),"pipeline":snap.get("pipeline",{}),
       "research":{
-        "queue_generated_at":queue.get("generated_at"),"tasks":len(queue.get("tasks",[])),
-        "completed":len(completed),"pending":max(0,len(queue.get("tasks",[]))-len(completed)),
-        "source_count":len(ledger.get("sources",[]))
+        "queue_generated_at":queue.get("generated_at"),"tasks":len(tasks),
+        "external_tasks":len(external_tasks),"completed":external_completed,
+        "pending":max(0,len(external_tasks)-external_completed),
+        "local_review":len(local_tasks),"source_count":len(ledger.get("sources",[]))
       },
+      "source_catalog":source_catalog,
       "compiler":{"projection_values_mutated":False},
       "games":games
     }

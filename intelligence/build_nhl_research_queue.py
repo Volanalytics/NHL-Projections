@@ -58,6 +58,7 @@ def task(game, domain, severity):
             "coach_player_media": f"Find material pregame coach/player/team comments for {away} at {home}.",
             "market": f"Capture current moneyline/total context and material movement for {away} at {home}.",
             "situational": f"Check other material situational context for {away} at {home}.",
+            "projection_integrity": "Resolve model/data integrity conflicts before treating intelligence as current.",
         }[domain],
         "model_context":model_context,
         "research_rules":{

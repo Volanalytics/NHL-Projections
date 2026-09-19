@@ -1,0 +1,69 @@
+{
+  "manifest_version": "1.0",
+  "system": "NHL Pregame Intelligence",
+  "architecture": "hybrid_google_sheets_apps_script_external_intelligence",
+  "projection_system_of_record": "Google Sheets",
+  "principles": {
+    "projection_values_immutable_in_intelligence": true,
+    "external_research_may_overwrite_projection_cells": false,
+    "explicit_unresolved_states": true,
+    "fail_closed_on_material_integrity_conflict": true,
+    "preserve_last_known_good_publication": true,
+    "freeze_at_puck_drop": true
+  },
+  "lifecycle": {
+    "gates": ["EARLY", "GAME_DAY", "T-90", "T-30", "PUCK_DROP"],
+    "states": ["BASELINE", "ACTIVE_RESEARCH", "CURRENT", "UNRESOLVED", "CONFLICT", "REPROJECTION_REQUIRED", "FROZEN"]
+  },
+  "mandatory_domains": [
+    "projection_integrity",
+    "starting_goalies",
+    "lines_and_scratches",
+    "power_play",
+    "penalty_kill",
+    "injuries_and_returns",
+    "expected_toi_and_role",
+    "rest_travel_schedule",
+    "coach_player_media",
+    "market",
+    "situational"
+  ],
+  "material_conflicts": {
+    "starting_goalie_change": "REPROJECTION_REQUIRED",
+    "projected_player_scratched": "REPROJECTION_REQUIRED",
+    "material_line_change": "CONFLICT",
+    "material_pp_unit_change": "CONFLICT",
+    "material_pk_unit_change": "CONFLICT",
+    "player_identity_collision": "REPROJECTION_REQUIRED",
+    "missing_player_id_for_projected_player": "CONFLICT",
+    "stale_projection_after_material_input_change": "REPROJECTION_REQUIRED"
+  },
+  "google_sheets_contract": {
+    "authoritative_tabs": ["Lineups", "Matchup", "Projections", "Game_Summary"],
+    "supplemental_integrity_tabs": ["Match_Review", "Run_Log"],
+    "snapshot_writer": "exportNhlIntelligenceSnapshot",
+    "snapshot_rule": "read_only_values_only",
+    "required_snapshot_sections": ["metadata", "pipeline", "games", "players", "model_conflicts"]
+  },
+  "daily_faceoff_budget": {
+    "max_full_league_pulls_per_day": 3,
+    "rule": "Intelligence research must not independently consume Daily Faceoff pulls.",
+    "recommended_windows": ["morning_game_day", "mid_afternoon", "late_pregame"],
+    "schedule_check_before_pull": true
+  },
+  "publication": {
+    "canonical_input": "intelligence/current/nhl_intelligence.json",
+    "snapshot_input": "intelligence/current/nhl_model_snapshot.json",
+    "source_ledger": "intelligence/current/source_ledger.json",
+    "research_queue": "intelligence/current/research_queue.json",
+    "html": "intelligence.html",
+    "archive_pattern": "intelligence/archive/YYYY-MM-DD/",
+    "atomic": true
+  },
+  "presentation": {
+    "template_family": "NCAAFB Intelligence",
+    "page_title": "NHL Intelligence",
+    "board_columns": ["Game", "Puck Drop", "Gate", "Model", "Goalie Status", "Lineup Status", "PP/PK", "Market", "State", "Intelligence"],
+    "game_card_sections": ["Model Baseline", "Model/Data Integrity", "Goaltending", "Lines/Injuries", "Special Teams", "Recent Form", "Rest/Travel", "Coach/Player/Media Intelligence", "Market", "Model Conflicts", "Intelligence Assessment", "Sources"]
+  }
+}

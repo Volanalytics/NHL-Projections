@@ -37,7 +37,9 @@ def main():
         if r.get("model_effect","NONE") not in VALID_EFFECT: raise SystemExit("Bad model_effect")
         if not r.get("source_ids") and r.get("status") in ("CONFIRMED","CONFLICT"):
             raise SystemExit("Confirmed/conflict finding requires source_ids: "+qid)
-        r["game_id"]=allowed[qid]["game_id"];r["domain"]=allowed[qid]["domain"]
+        r["game_id"]=allowed[qid]["game_id"]; r["domain"]=allowed[qid]["domain"]
+        if not r.get("researched_at"): r["researched_at"]=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
+        accepted.append(r)
         if not r.get("researched_at"): r["researched_at"]=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
         accepted.append(r)
     for s in incoming.get("sources",[]):

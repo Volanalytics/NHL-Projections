@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "generated_at": null,
+  "sources": [
+    {
+      "source_id": "stable-source-id",
+      "url": "https://example.com/source",
+      "source_type": "official_team|NHL|credentialed_beat|reputable_news|market_provider|other",
+      "publisher": "",
+      "author": "",
+      "retrieved_at": null,
+      "first_seen": null,
+      "last_seen": null,
+      "reliability_tier": 1,
+      "domains": [],
+      "game_ids": [],
+      "team_ids": [],
+      "player_ids": [],
+      "evidence_summary": "",
+      "reuse_count": 0
+    }
+  ]
+}

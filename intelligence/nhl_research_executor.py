@@ -42,12 +42,27 @@ def main():
         sid=s.get("source_id")
         if not sid or not s.get("url") or not s.get("retrieved_at"): raise SystemExit("Source requires source_id/url/retrieved_at")
         sources[sid]=s
+    existing_results=load(a.results,{"results":[]}) or {"results":[]}
+    existing_ledger=load(a.ledger,{"sources":[]}) or {"sources":[]}
+    if existing_results.get("slate_date") not in (None,q.get("slate_date")):
+        existing_results={"results":[]}
+    result_by_task={}
+    for old in existing_results.get("results",[]):
+        qid=old.get("task_id") or old.get("queue_id")
+        if qid in allowed: result_by_task[qid]=old
+    source_by_id={x.get("source_id"):x for x in existing_ledger.get("sources",[]) if x.get("source_id")}
+    source_by_id.update(sources)
     for r in accepted:
+        qid=r.get("task_id") or r.get("queue_id")
         for sid in r.get("source_ids",[]):
-            if sid not in sources: raise SystemExit("Missing source ledger record: "+sid)
+            if sid not in source_by_id: raise SystemExit("Missing source ledger record: "+sid)
+        result_by_task[qid]=r
     now=datetime.now(timezone.utc).isoformat()
-    write(a.results,{"schema_version":"1.0","generated_at":now,"slate_date":q.get("slate_date"),"results":accepted})
-    write(a.ledger,{"schema_version":"1.0","generated_at":now,"sources":list(sources.values())})
-    print(f"Accepted {len(accepted)} bounded findings and {len(sources)} sources.")
+    merged_results=list(result_by_task.values())
+    merged_sources=list(source_by_id.values())
+    write(a.results,{"schema_version":"1.0","generated_at":now,"slate_date":q.get("slate_date"),"results":merged_results})
+    write(a.ledger,{"schema_version":"1.0","generated_at":now,"sources":merged_sources})
+    print(f"Accepted {len(accepted)} bounded findings and {len(sources)} incoming sources.")
+    print(f"Merged totals: {len(merged_results)} findings and {len(merged_sources)} sources.")
 
 if __name__=="__main__": main()

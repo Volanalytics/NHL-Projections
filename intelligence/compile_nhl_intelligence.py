@@ -94,6 +94,7 @@ def main():
         "completed":len(completed),"pending":max(0,len(queue.get("tasks",[]))-len(completed)),
         "source_count":len(ledger.get("sources",[]))
       },
+      "compiler":{"projection_values_mutated":False},
       "games":games
     }
     atomic(args.out,package)

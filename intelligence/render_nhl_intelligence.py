@@ -28,15 +28,30 @@ def model_line(g):
     # Current snapshot carries FS/L20/L10; prefer L10 for the board while showing all windows in the card.
     x=m.get("L10") or m.get("L20") or m.get("FS") or m
     return x
+def conflict_text(c):
+    for k in ("summary","message","detail","warning","description"):
+        if c.get(k): return str(c[k])
+    who=c.get("player") or c.get("player_name") or c.get("name")
+    typ=c.get("conflict_type") or c.get("type") or "Model conflict"
+    return f"{typ}: {who}" if who else typ
 def top_intel(g):
-    cs=g.get("conflicts",[])
-    if cs:return cs[0].get("summary") or cs[0].get("conflict_type","Model conflict")
-    fs=g.get("findings",[])
+    fs=g.get("findings",[]); cs=g.get("conflicts",[])
+    confirmed=sum(x.get("status")=="CONFIRMED" for x in fs)
+    parts=[]
+    if confirmed: parts.append(f"{confirmed} confirmed finding"+("" if confirmed==1 else "s"))
+    if cs: parts.append(f"{len(cs)} model conflict"+("" if len(cs)==1 else "s"))
+    if parts:return " · ".join(parts)
     bad=[x for x in fs if x.get("status") in ("CONFLICT","UNRESOLVED","EXHAUSTED")]
     return (bad[0].get("summary") if bad else (fs[0].get("summary") if fs else "Research pending")) or "Research pending"
-def domain_card(domain, findings):
+def domain_card(domain, findings, game):
+    if domain=="projection_integrity":
+        cs=game.get("conflicts",[])
+        if cs:
+            body="<br>".join(e(conflict_text(c)) for c in cs)
+            return f"<div class='domain'><b>{e(LABELS[domain])}</b>{badge('LOCAL REVIEW')}<p>{body}</p></div>"
+        return f"<div class='domain'><b>{e(LABELS[domain])}</b>{badge('CLEAR')}<p>No local model/data integrity conflicts recorded.</p></div>"
     xs=[x for x in findings if x.get("domain")==domain]
-    if not xs:return f"<div class='domain'><b>{e(LABELS[domain])}</b>{badge('NOT RESEARCHED')}<p>Research has not yet been completed for this domain at the current lifecycle gate.</p></div>"
+    if not xs:return f"<div class='domain'><b>{e(LABELS[domain])}</b>{badge('NOT ACTIVE')}<p>Not active at the {e(game.get('gate') or 'current')} gate.</p></div>"
     x=xs[-1]
     return f"<div class='domain'><b>{e(LABELS[domain])}</b>{badge(x.get('status'))}<p>{e(x.get('summary') or 'No material finding recorded.')}</p></div>"
 def render(data):
@@ -47,7 +62,7 @@ def render(data):
     out.append(f"<header><div class='wrap'><div class='brand'><h1>Projections</h1><span class='stamp'>NHL · intelligence built {e(data.get('generated_at'))}</span></div><nav><a href='index.html'>Games</a><a href='ev.html'>Market</a><a href='players.html'>Players</a><a href='tracking.html'>Tracking</a><a href='intelligence.html' class='on'>Intelligence</a><a href='about.html'>About</a></nav></div></header><main><div class='wrap'>")
     out.append("<h2>Pregame Intelligence</h2><p class='note'>Read-only intelligence layer. Google Sheets remains the projection system of record; researched evidence is compared with the frozen model snapshot and never silently overwrites projection values.</p>")
     out.append("<div class='hero'>"+ "".join(f"<div><strong>{states.get(s,0)}</strong><label>{e(s)}</label></div>" for s in ["CURRENT","BASELINE","UNRESOLVED","CONFLICT","REPROJECTION_REQUIRED","FROZEN"]) +"</div>")
-    out.append("<h2>Research Engine</h2><div class='hero'>"+f"<div><strong>{research.get('completed',0)}</strong><label>Completed tasks</label></div><div><strong>{research.get('pending',0)}</strong><label>Pending tasks</label></div><div><strong>{research.get('source_count',0)}</strong><label>Sources</label></div><div><strong>0</strong><label>Independent DFO pulls</label></div></div>")
+    out.append("<h2>Research Engine</h2><div class='hero'>"+f"<div><strong>{research.get('external_tasks',research.get('tasks',0))}</strong><label>External research</label></div><div><strong>{research.get('completed',0)}</strong><label>Completed</label></div><div><strong>{research.get('pending',0)}</strong><label>External pending</label></div><div><strong>{research.get('local_review',0)}</strong><label>Local review</label></div><div><strong>{research.get('source_count',0)}</strong><label>Sources</label></div><div><strong>0</strong><label>Independent DFO pulls</label></div></div>")
     gate_limits={"EARLY":4,"GAME_DAY":6,"T-90":8,"T-30":10,"PUCK_DROP":0}
     out.append("<div class='grid cap'>"+ "".join(f"<div><label>{e(g)}</label><strong>{n}</strong><small>research domains / game</small></div>" for g,n in gate_limits.items()) +"</div>")
     out.append("<h2>Model / Data Integrity</h2><div class='grid'>")
@@ -73,13 +88,19 @@ def render(data):
             out.append(f"<div><label>{side} goalie</label><strong>{e(x.get('observed_name') or x.get('model_name'))}</strong><small>{e(x.get('status'))}</small></div>")
         out.append(f"<div><label>Lineup</label><strong>{e(g.get('lineup_status'))}</strong></div><div><label>PP / PK</label><strong>{e(g.get('special_teams_status'))}</strong></div></div>")
         out.append(f"<p class='callout'><b>Current intelligence:</b> {e(intel)}</p><div class='domains'>")
-        for d in DOMAINS:out.append(domain_card(d,findings))
+        for d in DOMAINS:out.append(domain_card(d,findings,g))
         out.append("</div><h4>Model conflicts</h4><ul>")
         cs=g.get("conflicts",[])
-        out.extend(f"<li>{e(c.get('conflict_type','CONFLICT'))} · {e(c.get('severity'))} · {e(c.get('summary'))}</li>" for c in cs)
+        out.extend(f"<li>{e(c.get('conflict_type') or c.get('type') or 'CONFLICT')} · {e(c.get('severity'))} · {e(conflict_text(c))}</li>" for c in cs)
         if not cs:out.append("<li>None</li>")
         out.append("</ul><h4>Sources</h4><ul>")
-        src=g.get("sources",[]);out.extend(f"<li>{e(x)}</li>" for x in src)
+        src=g.get("sources",[]); catalog=data.get("source_catalog",{})
+        for sid in src:
+            meta=catalog.get(sid,{})
+            title=meta.get("title") or sid; publisher=meta.get("publisher")
+            label=f"{title} — {publisher}" if publisher else title
+            url=meta.get("url")
+            out.append(f"<li><a href='{e(url)}' target='_blank' rel='noopener noreferrer'>{e(label)}</a><small class='note'> · {e(sid)}</small></li>" if url else f"<li>{e(label)} <small class='note'>· {e(sid)}</small></li>")
         if not src:out.append("<li>None recorded</li>")
         out.append("</ul></details>")
     out.append("</div></main><footer><div class='wrap'>Pregame intelligence is contextual model-audit output, not a replacement for the underlying projection.</div></footer>")

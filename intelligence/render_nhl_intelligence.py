@@ -48,6 +48,8 @@ def render(data):
     out.append("<h2>Pregame Intelligence</h2><p class='note'>Read-only intelligence layer. Google Sheets remains the projection system of record; researched evidence is compared with the frozen model snapshot and never silently overwrites projection values.</p>")
     out.append("<div class='hero'>"+ "".join(f"<div><strong>{states.get(s,0)}</strong><label>{e(s)}</label></div>" for s in ["CURRENT","BASELINE","UNRESOLVED","CONFLICT","REPROJECTION_REQUIRED","FROZEN"]) +"</div>")
     out.append("<h2>Research Engine</h2><div class='hero'>"+f"<div><strong>{research.get('completed',0)}</strong><label>Completed tasks</label></div><div><strong>{research.get('pending',0)}</strong><label>Pending tasks</label></div><div><strong>{research.get('source_count',0)}</strong><label>Sources</label></div><div><strong>0</strong><label>Independent DFO pulls</label></div></div>")
+    gate_limits={"EARLY":4,"GAME_DAY":6,"T-90":8,"T-30":10,"PUCK_DROP":0}
+    out.append("<div class='grid cap'>"+ "".join(f"<div><label>{e(g)}</label><strong>{n}</strong><small>research domains / game</small></div>" for g,n in gate_limits.items()) +"</div>")
     out.append("<h2>Model / Data Integrity</h2><div class='grid'>")
     for key in ["dfo","nst_full_season","rolling_l20_l10","player_matching","goalie_data","matchup","projections"]:
         x=pipeline.get(key,{})

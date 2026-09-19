@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "generated_at": null,
+  "results": [
+    {
+      "task_id": "COPY_FROM_RESEARCH_QUEUE",
+      "game_id": "COPY_FROM_RESEARCH_QUEUE",
+      "domain": "starting_goalies",
+      "status": "CONFIRMED",
+      "severity": "MEDIUM",
+      "side": null,
+      "model_value": null,
+      "observed_value": null,
+      "observed": null,
+      "goalie_status": null,
+      "summary": "Concise evidence-backed finding.",
+      "conflict_type": null,
+      "source_ids": ["source-id-from-ledger"]
+    }
+  ]
+}

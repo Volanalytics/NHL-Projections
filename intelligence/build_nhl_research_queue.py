@@ -71,22 +71,37 @@ def task(game, domain, severity):
 def main():
     ap=argparse.ArgumentParser()
     ap.add_argument("--snapshot",default="intelligence/current/nhl_model_snapshot.json")
-    ap.add_argument("--out",default="intelligence/current/research_queue.json")
+    ap.add_argument("--out","--output",dest="out",default="intelligence/current/research_queue.json")
+    ap.add_argument("--run-plan",default="intelligence/current/run_plan.json")
     ap.add_argument("--gate",choices=list(GATE_LIMITS))
     args=ap.parse_args()
     snap=load(args.snapshot); tasks=[]
+    plan=load(args.run_plan) if os.path.exists(args.run_plan) else {"games":[]}
+    plan_by_game={x.get("game_id"):x for x in plan.get("games",[])}
+    players=snap.get("players",[])
+    severity_by_domain=dict(DOMAINS)
     for g in snap.get("games",[]):
-        gate=args.gate or g.get("gate","EARLY")
-        if gate=="PUCK_DROP": continue
+        gp=plan_by_game.get(g.get("game_id"),{})
+        gate=args.gate or gp.get("gate") or g.get("gate","EARLY")
+        if gate=="PUCK_DROP" or gp.get("freeze") is True: continue
         gg=dict(g); gg["gate"]=gate
-        # Projection integrity is deterministic and does not consume research budget.
-        if g.get("integrity_warnings"):
+        gg["players"]=[p for p in players if p.get("team") in (g.get("away"),g.get("home"))]
+        # Snapshot model conflicts are deterministic local-review work and consume no external budget.
+        model_conflicts=g.get("conflicts",[]) or []
+        if model_conflicts:
+            gg["integrity_warnings"]=model_conflicts
             t=task(gg,"projection_integrity","HIGH"); t["status"]="LOCAL_REVIEW"
-            t["question"]="Resolve model/data integrity warnings before treating intelligence as current."
+            t["question"]="Resolve model/data integrity conflicts before treating intelligence as current."
             tasks.append(t)
-        limit=GATE_LIMITS[gate]
-        for domain,severity in DOMAINS[:limit]:
-            tasks.append(task(gg,domain,severity))
+        allowed=gp.get("domains")
+        if allowed is None:
+            limit=GATE_LIMITS[gate]
+            allowed=[d for d,_ in DOMAINS[:limit]]
+        max_items=gp.get("max_external_items",len(allowed))
+        added=0
+        for domain in allowed:
+            if domain not in severity_by_domain or added>=max_items: continue
+            tasks.append(task(gg,domain,severity_by_domain[domain])); added+=1
     payload={
         "schema_version":"1.0","generated_at":now(),"slate_date":snap.get("slate_date"),
         "snapshot_generated_at":snap.get("generated_at"),
